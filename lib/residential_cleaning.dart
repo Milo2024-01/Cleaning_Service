@@ -1,52 +1,57 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'home_service.dart'; // Import HomeServicePage
-import 'profile_page.dart'; // Import ProfilePage
-import 'main.dart'; // Import MyApp from main.dart
+// Import your main app for routing
+// ignore: library_prefixes
+import 'package:text101/main.dart' as mainApp;
+// Import your rcconstruction_cleaning.dart for the post construction cleaning page
+//import 'package:text101/residential_cleaning/rcconstructions_cleaning.dart';
+
+// Import ProfilePage and Firebase
+import 'profile_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'residential_cleaning/rcconstructions_cleaning.dart';
+import 'residential_cleaning/rcgeneral_cleaning.dart';
+
 class ResidentialCleaningPage extends StatelessWidget {
-  // Removed the const keyword here
   ResidentialCleaningPage({super.key});
 
-  // Define a list of services that might be available within the ResidentialCleaningPage
   final List<Map<String, dynamic>> services = [
     {
       'label': 'General Cleaning',
       'icon': Icons.cleaning_services,
-      'color': Colors.blue,
+      'color': Colors.blue
     },
     {
       'label': 'Post Construction Cleaning',
       'icon': Icons.build,
-      'color': Colors.green,
+      'color': Colors.green
     },
     {
       'label': 'Deep Cleaning',
       'icon': Icons.local_laundry_service,
-      'color': Colors.orange,
+      'color': Colors.orange
     },
     {
       'label': 'Grease Trap Cleaning',
       'icon': Icons.local_shipping,
-      'color': Colors.red,
+      'color': Colors.red
     },
     {
       'label': 'Decluttering Services',
       'icon': Icons.home_repair_service,
-      'color': Colors.purple,
+      'color': Colors.purple
     },
     {
       'label': 'Glass Detailing Services',
       'icon': Icons.window,
-      'color': Colors.teal,
+      'color': Colors.teal
     },
   ];
 
   @override
   Widget build(BuildContext context) {
-    // Get the current logged-in user
     User? user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
@@ -54,23 +59,20 @@ class ResidentialCleaningPage extends StatelessWidget {
         title: Text('Residential Cleaning'),
         backgroundColor: Colors.yellow,
         actions: [
-          // User profile icon in the top right corner
           user != null
               ? Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: FutureBuilder<DocumentSnapshot>(
                     future: FirebaseFirestore.instance
-                        .collection(
-                            'users') // Assuming the collection is 'users'
-                        .doc(user.uid) // Get the user document by their UID
+                        .collection('users')
+                        .doc(user.uid)
                         .get(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return CircularProgressIndicator(); // Show loading spinner while fetching
+                        return CircularProgressIndicator();
                       }
                       if (snapshot.hasError) {
-                        return Icon(Icons
-                            .error); // If error fetching data, show error icon
+                        return Icon(Icons.error);
                       }
 
                       String firstName =
@@ -79,26 +81,21 @@ class ResidentialCleaningPage extends StatelessWidget {
                       return Row(
                         children: [
                           Text(
-                            firstName, // Display the fetched first_name
+                            firstName,
                             style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
+                                fontSize: 14, fontWeight: FontWeight.bold),
                           ),
                           SizedBox(width: 10),
                           GestureDetector(
                             onTap: () {
                               Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => ProfilePage()),
-                              );
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => ProfilePage()));
                             },
                             child: CircleAvatar(
-                              backgroundImage: NetworkImage(
-                                user.photoURL ??
-                                    "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
-                              ),
+                              backgroundImage: NetworkImage(user.photoURL ??
+                                  "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"),
                             ),
                           ),
                         ],
@@ -106,21 +103,19 @@ class ResidentialCleaningPage extends StatelessWidget {
                     },
                   ),
                 )
-              : Container(), // If no user is logged in, no avatar will be shown
+              : Container(),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Displaying service categories in a Grid
             Text(
               'Choose Your Service',
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black),
             ),
             SizedBox(height: 20),
             Expanded(
@@ -135,16 +130,24 @@ class ResidentialCleaningPage extends StatelessWidget {
                 itemBuilder: (context, index) {
                   return GestureDetector(
                     onTap: () {
-                      // Add your navigation logic here for each service
-                      // Example: Navigate to a specific service detail page
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ServiceDetailPage(
-                            service: services[index],
+                      if (services[index]['label'] == 'General Cleaning') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GeneralCleaningCalculator(),
                           ),
-                        ),
-                      );
+                        );
+                      } else if (services[index]['label'] ==
+                          'Post Construction Cleaning') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                PostConstructionCleaningCalculator(),
+                          ),
+                        );
+                      }
+                      // Add other navigation logic here for other services
                     },
                     child: Card(
                       shape: RoundedRectangleBorder(
@@ -164,10 +167,9 @@ class ResidentialCleaningPage extends StatelessWidget {
                             Text(
                               services[index]['label'],
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -188,92 +190,58 @@ class ResidentialCleaningPage extends StatelessWidget {
           ],
         ),
       ),
-      // Bottom navigation bar
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
+              icon: Icon(Icons.calendar_today), label: 'Calendar'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Calendar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_circle),
-            label: 'Profile',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.logout),
-            label: 'Logout',
-          ),
+              icon: Icon(Icons.account_circle), label: 'Profile'),
+          BottomNavigationBarItem(icon: Icon(Icons.logout), label: 'Logout'),
         ],
         onTap: (index) {
-          // Handle bottom navigation taps here
           switch (index) {
             case 0:
               Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => HomeServicePage()),
-              );
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => mainApp
+                          .MyApp())); // Use the alias `mainApp` for MyApp from main.dart
               break;
             case 1:
-              // Calendar navigation (You can create a calendar screen here)
+              // Calendar navigation (create a calendar screen here)
               break;
             case 2:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ProfilePage()),
-              );
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => ProfilePage()));
               break;
             case 3:
-              _logout(context); // Pass context here
+              _logout(context);
               break;
           }
         },
-        selectedItemColor: Colors.black, // Set selected icon color to black
-        unselectedItemColor: Colors.black, // Set unselected icon color to black
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.black,
       ),
     );
   }
 
-  // Function to handle user logout
   Future<void> _logout(BuildContext context) async {
     try {
-      await FirebaseAuth.instance.signOut(); // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
+      // ignore: use_build_context_synchronously
       Navigator.pushReplacement(
-        // ignore: use_build_context_synchronously
-        context,
-        MaterialPageRoute(
-            builder: (context) => MyApp()), // Navigate to MyApp (Main Screen)
-      );
+          // ignore: use_build_context_synchronously
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  mainApp.MyApp())); // Use the alias `mainApp`
     } catch (e) {
       if (kDebugMode) {
-        print("Error logging out: $e");
-      } // Log any errors that happen during logout
+        if (kDebugMode) {
+          print("Error logging out: $e");
+        }
+      }
     }
-  }
-}
-
-// Example service detail page (You can replace it with a detailed service page)
-class ServiceDetailPage extends StatelessWidget {
-  final Map<String, dynamic> service;
-
-  const ServiceDetailPage({super.key, required this.service});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(service['label']),
-        backgroundColor: service['color'],
-      ),
-      body: Center(
-        child: Text(
-          'Details for ${service['label']}',
-          style: TextStyle(fontSize: 24),
-        ),
-      ),
-    );
   }
 }
