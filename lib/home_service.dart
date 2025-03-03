@@ -13,10 +13,15 @@ void main() {
 
 final List<Map<String, dynamic>> categories = [
   {
-    'icon': Icons.build,
-    'label': 'Residential Cleaning'
+    'icon': Icons.home,
+    'label': 'Residential Cleaning',
+    'color': Colors.blueAccent,
   }, // This is the category for Residential Cleaning
-  {'icon': Icons.cleaning_services, 'label': 'Special Cleaning Service'},
+  {
+    'icon': Icons.cleaning_services,
+    'label': 'Special Cleaning Service',
+    'color': Colors.orangeAccent,
+  },
 ];
 
 class HomeServicePage extends StatefulWidget {
@@ -128,8 +133,17 @@ class _HomeServicePageState extends State<HomeServicePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cleeners Clean Service'),
-        backgroundColor: Colors.yellow,
+        title: Text(
+          'Cleeners Clean Service',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.blueAccent, // Modern blue accent color
+        elevation: 5, // Shadow for the app bar
+        centerTitle: true, // Center the title
         actions: [
           // User profile icon in the top right corner
           user != null
@@ -160,6 +174,7 @@ class _HomeServicePageState extends State<HomeServicePage> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
                           SizedBox(width: 10),
@@ -193,38 +208,49 @@ class _HomeServicePageState extends State<HomeServicePage> {
             // Slideshow of images
             SizedBox(
               height: 200, // Fixed height of the container
-              width: 400, // Fixed width of the container
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: imagePaths.length,
-                itemBuilder: (context, index) {
-                  return Image.asset(
-                    imagePaths[index], // Load images from the assets
-                    width: 400, // Explicit width
-                    height: 200, // Explicit height
-                    fit: BoxFit.fill, // Ensures images fit perfectly
-                  );
-                },
+              width: 400, // Fixed width for the container
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(15), // Rounded corners
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: imagePaths.length,
+                  itemBuilder: (context, index) {
+                    return SizedBox(
+                      width: 400, // Fixed width for the container
+                      height: 200, // Fixed height for the container
+                      child: Image.asset(
+                        imagePaths[index], // Load images from the assets
+                        fit: BoxFit.cover, // Ensures images fit the container
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
-            SizedBox(height: 16),
+            SizedBox(height: 20),
             // Search Box
             TextField(
               decoration: InputDecoration(
                 hintText: 'Search',
-                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.search, color: Colors.blueAccent),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Colors.grey[200],
                 contentPadding:
                     EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
             ),
-            SizedBox(height: 16),
+            SizedBox(height: 20),
             Expanded(
               child: GridView.builder(
                 itemCount: categories.length,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
                   childAspectRatio: 1.2,
                 ),
                 itemBuilder: (context, index) {
@@ -253,6 +279,7 @@ class _HomeServicePageState extends State<HomeServicePage> {
                     child: CategoryCard(
                       icon: categories[index]['icon'] as IconData,
                       label: categories[index]['label'] as String,
+                      color: categories[index]['color'] as Color,
                     ),
                   );
                 },
@@ -261,7 +288,14 @@ class _HomeServicePageState extends State<HomeServicePage> {
             SizedBox(height: 10),
             TextButton(
               onPressed: () {},
-              child: Text('See All', style: TextStyle(fontSize: 16)),
+              child: Text(
+                'See All',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.blueAccent,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),
@@ -288,9 +322,12 @@ class _HomeServicePageState extends State<HomeServicePage> {
             label: 'Logout',
           ),
         ],
-        backgroundColor: Color.fromARGB(255, 226, 226, 223),
-        selectedItemColor: const Color.fromARGB(255, 238, 203, 2),
-        unselectedItemColor: Colors.black,
+        backgroundColor: Colors.white,
+        selectedItemColor: Colors.blueAccent,
+        unselectedItemColor: Colors.grey,
+        showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed,
+        elevation: 10,
       ),
     );
   }
@@ -300,27 +337,50 @@ class _HomeServicePageState extends State<HomeServicePage> {
 class CategoryCard extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Color color;
 
-  const CategoryCard({super.key, required this.icon, required this.label});
+  const CategoryCard({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 50, color: Colors.blueAccent),
-            SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-          ],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      elevation: 5,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            // ignore: deprecated_member_use
+            colors: [color.withOpacity(0.8), color],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 50, color: Colors.white),
+              SizedBox(height: 10),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

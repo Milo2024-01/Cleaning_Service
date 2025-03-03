@@ -14,32 +14,32 @@ class SpecializeCleaningPage extends StatelessWidget {
     {
       'label': 'Furniture Cleaning',
       'icon': Icons.chair,
-      'color': Colors.blue,
+      'color': Colors.blue.shade700,
     },
     {
       'label': 'Carpet Cleaning',
       'icon': Icons.cut,
-      'color': Colors.green,
+      'color': Colors.green.shade700,
     },
     {
       'label': 'Large Item Cleaning',
       'icon': Icons.more_horiz,
-      'color': Colors.orange,
+      'color': Colors.orange.shade700,
     },
     {
       'label': 'General Pest Control Services',
       'icon': Icons.bug_report,
-      'color': Colors.red,
+      'color': Colors.red.shade700,
     },
     {
       'label': 'Water Tank Cleaning',
       'icon': Icons.water_damage,
-      'color': Colors.purple,
+      'color': Colors.purple.shade700,
     },
     {
       'label': 'Car Interior Detailing',
       'icon': Icons.directions_car,
-      'color': Colors.teal,
+      'color': Colors.teal.shade700,
     },
   ];
 
@@ -50,65 +50,75 @@ class SpecializeCleaningPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Specialized Cleaning'),
-        backgroundColor: Colors.yellow,
+        title: Text(
+          'Specialized Cleaning',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.deepPurple, // Modern app bar color
+        elevation: 0, // Remove shadow for a flat design
         actions: [
           // User profile icon in the top right corner
-          user != null
-              ? Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: FutureBuilder<DocumentSnapshot>(
-                    future: FirebaseFirestore.instance
-                        .collection(
-                            'users') // Assuming the collection is 'users'
-                        .doc(user.uid) // Get the user document by their UID
-                        .get(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return CircularProgressIndicator(); // Show loading spinner while fetching
-                      }
-                      if (snapshot.hasError) {
-                        return Icon(Icons
-                            .error); // If error fetching data, show error icon
-                      }
+          if (user != null)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('users') // Assuming the collection is 'users'
+                    .doc(user.uid) // Get the user document by their UID
+                    .get(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator(
+                        color: Colors.white); // Show loading spinner
+                  }
+                  if (snapshot.hasError) {
+                    return Icon(Icons.error, color: Colors.white); // Error icon
+                  }
 
-                      String firstName =
-                          snapshot.data?.get('first_name') ?? "Guest";
+                  String firstName =
+                      snapshot.data?.get('first_name') ?? "Guest";
 
-                      return Row(
-                        children: [
-                          Text(
-                            firstName, // Display the fetched first_name
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
+                  return Row(
+                    children: [
+                      Text(
+                        firstName, // Display the fetched first_name
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ProfilePage()),
+                          );
+                        },
+                        child: CircleAvatar(
+                          backgroundImage: NetworkImage(
+                            user.photoURL ??
+                                "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
                           ),
-                          SizedBox(width: 10),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => ProfilePage()),
-                              );
-                            },
-                            child: CircleAvatar(
-                              backgroundImage: NetworkImage(
-                                user.photoURL ??
-                                    "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                )
-              : Container(), // If no user is logged in, no avatar will be shown
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
         ],
       ),
-      body: Padding(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple.shade50, Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
@@ -118,7 +128,7 @@ class SpecializeCleaningPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: Colors.deepPurple,
               ),
             ),
             SizedBox(height: 20),
@@ -132,25 +142,27 @@ class SpecializeCleaningPage extends StatelessWidget {
                   childAspectRatio: 1.2,
                 ),
                 itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      // Add your navigation logic here for each service
-                      // Example: Navigate to a specific service detail page
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ServiceDetailPage(
-                            service: services[index],
+                  return Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    elevation: 4,
+                    // ignore: deprecated_member_use
+                    shadowColor: Colors.deepPurple.withOpacity(0.2),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () {
+                        // Add your navigation logic here for each service
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ServiceDetailPage(
+                              service: services[index],
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    child: Card(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      elevation: 4,
+                        );
+                      },
                       child: Padding(
-                        padding: const EdgeInsets.all(12.0),
+                        padding: const EdgeInsets.all(16.0),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -159,13 +171,13 @@ class SpecializeCleaningPage extends StatelessWidget {
                               size: 50,
                               color: services[index]['color'],
                             ),
-                            SizedBox(height: 8),
+                            SizedBox(height: 12),
                             Text(
                               services[index]['label'],
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                color: Colors.deepPurple,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -182,7 +194,14 @@ class SpecializeCleaningPage extends StatelessWidget {
               onPressed: () {
                 // Action when 'See All' button is pressed
               },
-              child: Text('See All', style: TextStyle(fontSize: 16)),
+              child: Text(
+                'See All',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.deepPurple,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),
@@ -230,8 +249,9 @@ class SpecializeCleaningPage extends StatelessWidget {
               break;
           }
         },
-        selectedItemColor: Colors.black, // Set selected icon color to black
-        unselectedItemColor: Colors.black, // Set unselected icon color to black
+        selectedItemColor: Colors.deepPurple, // Set selected icon color
+        unselectedItemColor: Colors.grey, // Set unselected icon color
+        showUnselectedLabels: true,
       ),
     );
   }
@@ -264,13 +284,25 @@ class ServiceDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(service['label']),
+        title: Text(
+          service['label'],
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: service['color'],
       ),
-      body: Center(
-        child: Text(
-          'Details for ${service['label']}',
-          style: TextStyle(fontSize: 24),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple.shade50, Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            'Details for ${service['label']}',
+            style: TextStyle(fontSize: 24, color: Colors.deepPurple),
+          ),
         ),
       ),
     );

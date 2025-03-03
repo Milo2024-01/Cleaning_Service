@@ -30,7 +30,8 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.blue[700], // Darker blue for the app bar
+        backgroundColor:
+            Colors.orangeAccent[700], // Darker blue for the app bar
         elevation: 5, // Shadow for the app bar
         centerTitle: true, // Center the title
       ),
@@ -55,7 +56,7 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue[900], // Dark blue text
+                        color: Colors.orangeAccent[900], // Dark blue text
                       ),
                     ),
                     SizedBox(height: 10),
@@ -76,7 +77,7 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue[900], // Dark blue text
+                color: Colors.orangeAccent[900], // Dark blue text
               ),
             ),
             SizedBox(height: 10),
@@ -86,7 +87,7 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
               max: 100.0,
               divisions: 99,
               label: '${areaSize.toStringAsFixed(1)} sqm',
-              activeColor: Colors.blue[700], // Blue slider
+              activeColor: Colors.orangeAccent[700], // Blue slider
               inactiveColor: Colors.blue[100], // Light blue
               onChanged: (double value) {
                 setState(() {
@@ -102,7 +103,8 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue[900], // Dark blue text
+                  color:
+                      const Color.fromARGB(255, 255, 102, 0), // Dark blue text
                 ),
               ),
             ),
@@ -124,7 +126,7 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
                         title: Text(
                           "Booking Confirmation",
                           style: TextStyle(
-                            color: Colors.blue[900], // Dark blue text
+                            color: Colors.orangeAccent[900], // Dark blue text
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -143,7 +145,8 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
                             child: Text(
                               "OK",
                               style: TextStyle(
-                                color: Colors.blue[900], // Dark blue text
+                                color:
+                                    Colors.orangeAccent[900], // Dark blue text
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -155,7 +158,7 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
-                      const Color.fromARGB(255, 25, 210, 81), // Blue button
+                      const Color.fromARGB(255, 255, 109, 0), // Blue button
                   padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30), // Rounded button

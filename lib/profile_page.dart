@@ -70,17 +70,17 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Profile'),
+        title: Text('Profile', style: TextStyle(color: Colors.white)),
         backgroundColor:
-            Colors.yellow.shade700, // Use yellow for app bar background
+            Colors.deepPurple, // Use deep purple for app bar background
         actions: [
           _isEditing
               ? IconButton(
-                  icon: Icon(Icons.save),
+                  icon: Icon(Icons.save, color: Colors.white),
                   onPressed: _updateUserData,
                 )
               : IconButton(
-                  icon: Icon(Icons.edit),
+                  icon: Icon(Icons.edit, color: Colors.white),
                   onPressed: () {
                     setState(() {
                       _isEditing = true; // Enable editing mode
@@ -92,7 +92,7 @@ class _ProfilePageState extends State<ProfilePage> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.yellow.shade200, Colors.white],
+            colors: [Colors.deepPurple.shade50, Colors.white],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -144,53 +144,85 @@ class _ProfilePageState extends State<ProfilePage> {
     TextInputType? keyboardType,
     int maxLines = 1,
   }) {
-    return TextFormField(
-      controller: controller,
-      enabled: _isEditing, // Allow editing if in edit mode
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.yellow.shade700),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.yellow.shade700),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.yellow.shade700, width: 2),
-        ),
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
       ),
-      keyboardType: keyboardType,
-      maxLines: maxLines,
+      child: TextFormField(
+        controller: controller,
+        enabled: _isEditing, // Allow editing if in edit mode
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.deepPurple),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.deepPurple, width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+      ),
     );
   }
 
   // Gender dropdown method
   Widget _buildGenderDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _selectedGender,
-      items: ['Male', 'Female']
-          .map((gender) => DropdownMenuItem<String>(
-                value: gender,
-                child: Text(gender),
-              ))
-          .toList(),
-      onChanged: _isEditing
-          ? (String? newValue) {
-              setState(() {
-                _selectedGender = newValue!;
-              });
-            }
-          : null, // Disable dropdown when not in edit mode
-      decoration: InputDecoration(
-        labelText: 'Gender',
-        labelStyle: TextStyle(color: Colors.yellow.shade700),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.yellow.shade700),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.yellow.shade700, width: 2),
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField<String>(
+        value: _selectedGender,
+        items: ['Male', 'Female']
+            .map((gender) => DropdownMenuItem<String>(
+                  value: gender,
+                  child: Text(gender),
+                ))
+            .toList(),
+        onChanged: _isEditing
+            ? (String? newValue) {
+                setState(() {
+                  _selectedGender = newValue!;
+                });
+              }
+            : null, // Disable dropdown when not in edit mode
+        decoration: InputDecoration(
+          labelText: 'Gender',
+          labelStyle: TextStyle(color: Colors.deepPurple),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.deepPurple, width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.white,
         ),
       ),
     );
