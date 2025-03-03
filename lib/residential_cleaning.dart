@@ -3,16 +3,17 @@ import 'package:flutter/material.dart';
 // Import your main app for routing
 // ignore: library_prefixes
 import 'package:text101/main.dart' as mainApp;
-// Import your rcconstruction_cleaning.dart for the post construction cleaning page
-//import 'package:text101/residential_cleaning/rcconstructions_cleaning.dart';
-
 // Import ProfilePage and Firebase
 import 'profile_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Import your cleaning pages
 import 'residential_cleaning/rcconstructions_cleaning.dart';
 import 'residential_cleaning/rcgeneral_cleaning.dart';
+import 'residential_cleaning/rcdeep_cleaning.dart'; // Import Deep Cleaning page
+import 'residential_cleaning/rcglass_services.dart'; // Import Glass Detailing page
+import 'residential_cleaning/rcgrease_cleaning.dart'; // Import Grease Trap Cleaning page
 
 class ResidentialCleaningPage extends StatelessWidget {
   ResidentialCleaningPage({super.key});
@@ -29,7 +30,7 @@ class ResidentialCleaningPage extends StatelessWidget {
       'color': Colors.green
     },
     {
-      'label': 'Deep Cleaning',
+      'label': 'Deep Cleaning', // Add Deep Cleaning here
       'icon': Icons.local_laundry_service,
       'color': Colors.orange
     },
@@ -146,8 +147,32 @@ class ResidentialCleaningPage extends StatelessWidget {
                                 PostConstructionCleaningCalculator(),
                           ),
                         );
+                      } else if (services[index]['label'] == 'Deep Cleaning') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DeepCleaningCalculator(),
+                          ),
+                        );
+                      } else if (services[index]['label'] ==
+                          'Glass Detailing Services') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GlassDetailingCalculator(),
+                          ),
+                        );
+                      } else if (services[index]['label'] ==
+                          'Grease Trap Cleaning') {
+                        // Navigate to Grease Trap Cleaning page
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                GreaseTrapCleaningCalculator(),
+                          ),
+                        );
                       }
-                      // Add other navigation logic here for other services
                     },
                     child: Card(
                       shape: RoundedRectangleBorder(
@@ -238,9 +263,7 @@ class ResidentialCleaningPage extends StatelessWidget {
                   mainApp.MyApp())); // Use the alias `mainApp`
     } catch (e) {
       if (kDebugMode) {
-        if (kDebugMode) {
-          print("Error logging out: $e");
-        }
+        print("Error logging out: $e");
       }
     }
   }
