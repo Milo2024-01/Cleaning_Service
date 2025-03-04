@@ -1,39 +1,43 @@
 import 'package:flutter/material.dart';
-import '../specialize_cleaning.dart';
+import '../specialize_cleaning.dart'; // Import SpecializeCleaningPage
 
-class LargeItemCleaningPage extends StatefulWidget {
-  const LargeItemCleaningPage({super.key});
+class PestControlPage extends StatefulWidget {
+  const PestControlPage({super.key});
 
   @override
-  _LargeItemCleaningPageState createState() => _LargeItemCleaningPageState();
+  _PestControlPageState createState() => _PestControlPageState();
 }
 
-class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
-  int itemSize = 3; // Default size in feet
-  final int priceSmall = 1000;
-  final int priceLarge = 2500;
+class _PestControlPageState extends State<PestControlPage> {
+  final TextEditingController _areaController = TextEditingController();
+  final int pricePerSqm = 65;
+  int totalCost = 0;
 
-  int get totalCost =>
-      itemSize > 5 ? priceLarge : priceSmall; // Auto Calculation
+  void _calculateCost() {
+    setState(() {
+      double areaSize = double.tryParse(_areaController.text) ?? 0;
+      totalCost = (areaSize * pricePerSqm).toInt();
+    });
+  }
 
   void _bookService() {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.amber[50],
+          backgroundColor: Colors.red[50],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
           title: Text(
             "Booking Confirmation",
             style: TextStyle(
-              color: Colors.amber[900],
+              color: Colors.red[900],
               fontWeight: FontWeight.bold,
             ),
           ),
           content: Text(
-            "You have booked cleaning for a life-size stuffed toy of $itemSize ft.\nTotal Cost: ₱$totalCost",
+            "You have booked General Pest Control for ${_areaController.text} sqm.\nTotal Cost: ₱$totalCost",
             style: const TextStyle(
               color: Colors.black87,
               fontSize: 16,
@@ -47,7 +51,7 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
               child: Text(
                 "OK",
                 style: TextStyle(
-                  color: Colors.amber[900],
+                  color: Colors.red[900],
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -62,7 +66,8 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Large Item Cleaning'),
+        title: const Text('General Pest Control'),
+        backgroundColor: Colors.red[700],
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -80,7 +85,7 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.amber.shade700, Colors.amber.shade400],
+            colors: [Colors.red.shade700, Colors.red.shade400],
           ),
         ),
         child: Padding(
@@ -102,7 +107,6 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
               ),
               child: Column(
                 children: [
-                  // Service Details Card
                   Card(
                     elevation: 8,
                     shape: RoundedRectangleBorder(
@@ -114,16 +118,16 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Large Item Cleaning',
+                            'General Pest Control Services',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              color: Colors.amber[900],
+                              color: Colors.red[900],
                             ),
                           ),
                           const SizedBox(height: 10),
                           const Text(
-                            'Careful cleaning for large items, ensuring they remain in pristine condition.',
+                            'General pest control solutions to manage and eliminate common household pests. FDA and DOH Approved.',
                             style: TextStyle(fontSize: 16, height: 1.5),
                           ),
                         ],
@@ -131,111 +135,61 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                     ),
                   ),
                   const SizedBox(height: 30),
-
                   Text(
-                    'Life-Size Stuffed Toy Cleaning',
+                    'Enter Area Size (sqm)',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.amber[900],
+                      color: Colors.red[900],
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // Cost Calculator Card
-                  Card(
-                    elevation: 8,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          // Size Slider
-                          Row(
-                            children: [
-                              Icon(Icons.height, color: Colors.amber[800]),
-                              const SizedBox(width: 10),
-                              const Text(
-                                'Size (ft):',
-                                style: TextStyle(fontSize: 18),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Slider(
-                                  value: itemSize.toDouble(),
-                                  min: 3,
-                                  max: 6,
-                                  divisions: 3,
-                                  label: itemSize.toString(),
-                                  activeColor: Colors.amber[700],
-                                  inactiveColor: Colors.amber[100],
-                                  onChanged: (value) {
-                                    setState(() {
-                                      itemSize = value.toInt();
-                                    });
-                                  },
-                                ),
-                              ),
-                              Text(
-                                '$itemSize ft',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.amber[900],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                  TextField(
+                    controller: _areaController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: "Area Size (sqm)",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
+                    onChanged: (value) => _calculateCost(),
                   ),
-
                   const SizedBox(height: 30),
-
-                  // Total Cost
                   Center(
                     child: Text(
                       'Total Cost: ₱$totalCost',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Colors.amber[900],
+                        color: Colors.red[900],
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 30),
-
-                  // Book Now Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _bookService,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber[700],
+                        backgroundColor: Colors.red[700],
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
                       child: const Text(
-                        'Book Cleaning',
+                        'Book Service',
                         style: TextStyle(fontSize: 18, color: Colors.white),
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 40),
-
-                  // Icon Decoration
                   Center(
                     child: Icon(
-                      Icons.clean_hands,
+                      Icons.pest_control,
                       size: 100,
-                      color: Colors.amber[300],
+                      color: Colors.red[300],
                     ),
                   ),
                 ],

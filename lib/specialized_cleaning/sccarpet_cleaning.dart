@@ -38,6 +38,12 @@ class _SCCarpetCleaningPageState extends State<SCCarpetCleaningPage> {
         ),
         backgroundColor: Colors.teal,
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context); // This will navigate back
+          },
+        ),
       ),
       body: Container(
         decoration: BoxDecoration(

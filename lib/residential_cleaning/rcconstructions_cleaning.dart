@@ -11,19 +11,15 @@ class PostConstructionCleaningCalculator extends StatefulWidget {
 class _PostConstructionCleaningCalculatorState
     extends State<PostConstructionCleaningCalculator> {
   double areaSize = 1.0; // Default to 1 sqm
-  double totalCost = 60.0; // Cost per square meter
+  final double ratePerSqm = 60.0;
 
-  void calculateTotalCost() {
-    setState(() {
-      totalCost = areaSize * 60; // 60 Pesos per sqm
-    });
-  }
+  double get totalCost => areaSize * ratePerSqm; // Auto calculate
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Post Construction Cleaning',
           style: TextStyle(
             fontSize: 22,
@@ -31,147 +27,132 @@ class _PostConstructionCleaningCalculatorState
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.green[700], // Darker green for the app bar
-        elevation: 5, // Shadow for the app bar
-        centerTitle: true, // Center the title
+        backgroundColor: Colors.green[700], // Dark green for the app bar
+        elevation: 5,
+        centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Service Details Card with Drop Shadow
-            Card(
-              elevation: 5, // Shadow for the card
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15), // Rounded corners
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Post Construction Cleaning',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green[900], // Dark green text
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Using Premium Hydro Vacuum. Removal of excess paint, construction dust, and removal of unwanted smell.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 30), // Spacer between the description and slider
-            Text(
-              'Enter the area size (in sqm):',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.green[900], // Dark green text
-              ),
-            ),
-            SizedBox(height: 10),
-            Slider(
-              value: areaSize,
-              min: 1.0,
-              max: 100.0,
-              divisions: 99,
-              label: '${areaSize.toStringAsFixed(1)} sqm',
-              activeColor: Colors.green[700], // Green slider
-              inactiveColor: Colors.green[100], // Light green
-              onChanged: (double value) {
-                setState(() {
-                  areaSize = value;
-                  calculateTotalCost();
-                });
-              },
-            ),
-            SizedBox(height: 20),
-            Center(
-              child: Text(
-                'Total Cost: ₱${totalCost.toStringAsFixed(2)}',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green[900], // Dark green text
-                ),
-              ),
-            ),
-            SizedBox(height: 30),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  // Add your booking or action logic here
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        backgroundColor:
-                            Colors.green[50], // Light green background
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(20), // Rounded corners
-                        ),
-                        title: Text(
-                          "Booking Confirmation",
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.green.shade700, Colors.green.shade300],
+          ),
+        ),
+        child: SingleChildScrollView(
+          // FIX: Allow scrolling to prevent overflow
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Card(
+                  elevation: 10,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Post Construction Cleaning',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.green[900], // Dark green text
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
+                            color: Colors.green,
                           ),
                         ),
-                        content: Text(
-                          "You have booked cleaning for ${areaSize.toStringAsFixed(1)} sqm.\nTotal Cost: ₱${totalCost.toStringAsFixed(2)}",
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Using Premium Hydro Vacuum. Removal of excess paint, construction dust, and elimination of unwanted smells.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 16, height: 1.5),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Rate: ₱$ratePerSqm per sqm',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Enter the area size (in sqm):',
                           style: TextStyle(
-                            color: Colors.black87,
-                            fontSize: 16,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[900],
                           ),
                         ),
-                        actions: [
-                          TextButton(
+                        const SizedBox(height: 10),
+                        Slider(
+                          value: areaSize,
+                          min: 1.0,
+                          max: 100.0,
+                          divisions: 99,
+                          label: '${areaSize.toStringAsFixed(1)} sqm',
+                          activeColor: Colors.green[700],
+                          inactiveColor: Colors.green[100],
+                          onChanged: (double value) {
+                            setState(() {
+                              areaSize = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Total Cost: ₱${totalCost.toStringAsFixed(2)}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity, // FIX: Make button full width
+                          child: ElevatedButton(
                             onPressed: () {
-                              Navigator.of(context).pop(); // Close the dialog
+                              // Booking functionality here
                             },
-                            child: Text(
-                              "OK",
-                              style: TextStyle(
-                                color: Colors.green[900], // Dark green text
-                                fontWeight: FontWeight.bold,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green[700],
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 16, horizontal: 40),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
                               ),
                             ),
+                            child: const Text(
+                              'Book Now',
+                              style:
+                                  TextStyle(fontSize: 18, color: Colors.white),
+                            ),
                           ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700], // Green button
-                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30), // Rounded button
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                child: Text(
-                  'Book Service',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white, // White text color
+                const SizedBox(
+                    height: 30), // FIX: Add space to prevent icon overlap
+                Center(
+                  child: Icon(
+                    Icons.cleaning_services,
+                    size: 100,
+                    // ignore: deprecated_member_use
+                    color: Colors.white.withOpacity(0.3),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

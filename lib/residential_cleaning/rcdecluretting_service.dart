@@ -40,6 +40,12 @@ class _RCCDeclutteringServicePageState
         ),
         backgroundColor: Colors.deepPurple,
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context); // Go back to the previous page
+          },
+        ),
       ),
       body: Container(
         decoration: BoxDecoration(

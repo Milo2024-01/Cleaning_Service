@@ -42,7 +42,6 @@ class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _LoginPageState createState() => _LoginPageState();
 }
 
@@ -51,7 +50,6 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Email and password login method
   Future<void> _signInWithEmail() async {
     try {
       await _auth.signInWithEmailAndPassword(
@@ -59,10 +57,12 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text,
       );
       // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Login Successful')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login Successful')),
+      );
 
       // Navigate to Home Service Page after successful login
+      // ignore: use_build_context_synchronously
       Navigator.pushReplacement(
         // ignore: use_build_context_synchronously
         context,
@@ -73,7 +73,8 @@ class _LoginPageState extends State<LoginPage> {
       print("Error during login: $e");
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Login failed. Please check your credentials")),
+        const SnackBar(
+            content: Text("Login failed. Please check your credentials")),
       );
     }
   }
@@ -81,89 +82,113 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.yellow, Colors.white],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Cleaning Service Icon Above the Login Form
-                  Icon(
-                    Icons
-                        .cleaning_services, // Flutter's built-in cleaning services icon
-                    size: 80, // Adjust size of the icon
-                    color: Colors.yellow.shade700,
-                  ),
-                  SizedBox(height: 20),
-
-                  // Title Text
-                  Text(
-                    'Login',
-                    style: TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  SizedBox(height: 30),
-                  // Email Text Field
-                  _buildTextField(
-                    controller: _usernameController,
-                    hint: 'Enter your email',
-                    icon: Icons.email,
-                  ),
-                  SizedBox(height: 20),
-                  // Password Text Field
-                  _buildTextField(
-                    controller: _passwordController,
-                    hint: 'Enter your password',
-                    icon: Icons.lock,
-                    obscureText: true,
-                  ),
-                  SizedBox(height: 20),
-                  // Login Button
-                  _buildButton(
-                    text: 'Login',
-                    onPressed: _signInWithEmail,
-                  ),
-                  SizedBox(height: 20),
-                  // Forgot Password Button
-                  _buildTextButton(
-                    text: 'Forgot Password?',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ForgotPasswordScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  SizedBox(height: 10),
-                  // Sign-up Button
-                  _buildTextButton(
-                    text: 'Don\'t have an account? Sign up',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => RegisterPage()),
-                      );
-                    },
-                  ),
-                ],
+      body: Stack(
+        children: [
+          // Diagonal White Line
+          Positioned(
+            top: -MediaQuery.of(context).size.width * 0.5,
+            left: -MediaQuery.of(context).size.width * 0.5,
+            child: Transform.rotate(
+              angle: 0.785, // 45 degrees in radians
+              child: Container(
+                width: MediaQuery.of(context).size.width * 1.5,
+                height: 2,
+                // ignore: deprecated_member_use
+                color: Colors.white.withOpacity(0.5),
               ),
             ),
           ),
-        ),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.yellow, Colors.yellow.shade200],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Cleaning Service Icon
+                      Icon(
+                        Icons.cleaning_services,
+                        size: 80,
+                        color: Colors.yellow.shade700,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Title Text
+                      Text(
+                        'Login',
+                        style: TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          fontFamily: 'Roboto', // Modern font
+                        ),
+                      ),
+                      const SizedBox(height: 30),
+
+                      // Email Text Field
+                      _buildTextField(
+                        controller: _usernameController,
+                        hint: 'Enter your email',
+                        icon: Icons.email,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Password Text Field
+                      _buildTextField(
+                        controller: _passwordController,
+                        hint: 'Enter your password',
+                        icon: Icons.lock,
+                        obscureText: true,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Login Button
+                      _buildButton(
+                        text: 'Login',
+                        onPressed: _signInWithEmail,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Forgot Password Button
+                      _buildTextButton(
+                        text: 'Forgot Password?',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ForgotPasswordScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Sign-up Button
+                      _buildTextButton(
+                        text: 'Don\'t have an account? Sign up',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => RegisterPage()),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -181,10 +206,10 @@ class _LoginPageState extends State<LoginPage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black26,
-            blurRadius: 6,
-            offset: Offset(0, 2),
-          ),
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
         ],
       ),
       child: TextField(
@@ -193,7 +218,8 @@ class _LoginPageState extends State<LoginPage> {
           prefixIcon: Icon(icon, color: Colors.yellow.shade700),
           hintText: hint,
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
         ),
         obscureText: obscureText,
       ),
@@ -209,14 +235,15 @@ class _LoginPageState extends State<LoginPage> {
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.yellow.shade700,
-        padding: EdgeInsets.symmetric(vertical: 15, horizontal: 40),
+        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 40),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
+        elevation: 5,
       ),
       child: Text(
         text,
-        style: TextStyle(
+        style: const TextStyle(
             color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
       ),
     );
@@ -231,7 +258,7 @@ class _LoginPageState extends State<LoginPage> {
       onPressed: onPressed,
       child: Text(
         text,
-        style: TextStyle(color: Colors.black87, fontSize: 16),
+        style: const TextStyle(color: Colors.black87, fontSize: 16),
       ),
     );
   }
