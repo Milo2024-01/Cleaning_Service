@@ -1,15 +1,18 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'home_service.dart'; // Import HomeServicePage
-import 'profile_page.dart'; // Import ProfilePage
-import 'main.dart'; // Import MyApp from main.dart
+import 'home_service.dart';
+import 'profile_page.dart';
+import 'main.dart';
+import 'specialized_cleaning/sccarpet_cleaning.dart';
+import 'specialized_cleaning/scfurniture_cleaning.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+// Import Furniture Cleaning Page
 
 class SpecializeCleaningPage extends StatelessWidget {
   SpecializeCleaningPage({super.key});
 
-  // Define a list of new specialized cleaning services
   final List<Map<String, dynamic>> services = [
     {
       'label': 'Furniture Cleaning',
@@ -45,7 +48,6 @@ class SpecializeCleaningPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get the current logged-in user
     User? user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
@@ -54,25 +56,23 @@ class SpecializeCleaningPage extends StatelessWidget {
           'Specialized Cleaning',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.deepPurple, // Modern app bar color
-        elevation: 0, // Remove shadow for a flat design
+        backgroundColor: Colors.deepPurple,
+        elevation: 0,
         actions: [
-          // User profile icon in the top right corner
           if (user != null)
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
-                    .collection('users') // Assuming the collection is 'users'
-                    .doc(user.uid) // Get the user document by their UID
+                    .collection('users')
+                    .doc(user.uid)
                     .get(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CircularProgressIndicator(
-                        color: Colors.white); // Show loading spinner
+                    return CircularProgressIndicator(color: Colors.white);
                   }
                   if (snapshot.hasError) {
-                    return Icon(Icons.error, color: Colors.white); // Error icon
+                    return Icon(Icons.error, color: Colors.white);
                   }
 
                   String firstName =
@@ -81,7 +81,7 @@ class SpecializeCleaningPage extends StatelessWidget {
                   return Row(
                     children: [
                       Text(
-                        firstName, // Display the fetched first_name
+                        firstName,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -92,10 +92,9 @@ class SpecializeCleaningPage extends StatelessWidget {
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => ProfilePage()),
-                          );
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => ProfilePage()));
                         },
                         child: CircleAvatar(
                           backgroundImage: NetworkImage(
@@ -122,7 +121,6 @@ class SpecializeCleaningPage extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Displaying service categories in a Grid
             Text(
               'Choose Your Specialized Service',
               style: TextStyle(
@@ -151,15 +149,32 @@ class SpecializeCleaningPage extends StatelessWidget {
                     child: InkWell(
                       borderRadius: BorderRadius.circular(16),
                       onTap: () {
-                        // Add your navigation logic here for each service
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ServiceDetailPage(
-                              service: services[index],
+                        if (services[index]['label'] == 'Furniture Cleaning') {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ServiceScreen(),
                             ),
-                          ),
-                        );
+                          );
+                        } else if (services[index]['label'] ==
+                            'Carpet Cleaning') {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  SCCarpetCleaningPage(), // Navigate to Carpet Cleaning Page
+                            ),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ServiceDetailPage(
+                                service: services[index],
+                              ),
+                            ),
+                          );
+                        }
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -191,9 +206,7 @@ class SpecializeCleaningPage extends StatelessWidget {
             ),
             SizedBox(height: 10),
             TextButton(
-              onPressed: () {
-                // Action when 'See All' button is pressed
-              },
+              onPressed: () {},
               child: Text(
                 'See All',
                 style: TextStyle(
@@ -206,7 +219,6 @@ class SpecializeCleaningPage extends StatelessWidget {
           ],
         ),
       ),
-      // Bottom navigation bar
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
@@ -227,7 +239,6 @@ class SpecializeCleaningPage extends StatelessWidget {
           ),
         ],
         onTap: (index) {
-          // Handle bottom navigation taps here
           switch (index) {
             case 0:
               Navigator.pushReplacement(
@@ -236,7 +247,6 @@ class SpecializeCleaningPage extends StatelessWidget {
               );
               break;
             case 1:
-              // Calendar navigation (You can create a calendar screen here)
               break;
             case 2:
               Navigator.push(
@@ -245,36 +255,35 @@ class SpecializeCleaningPage extends StatelessWidget {
               );
               break;
             case 3:
-              _logout(context); // Pass context here
+              _logout(context);
               break;
           }
         },
-        selectedItemColor: Colors.deepPurple, // Set selected icon color
-        unselectedItemColor: Colors.grey, // Set unselected icon color
+        selectedItemColor: Colors.deepPurple,
+        unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
       ),
     );
   }
 
-  // Function to handle user logout
   Future<void> _logout(BuildContext context) async {
     try {
-      await FirebaseAuth.instance.signOut(); // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
       Navigator.pushReplacement(
         // ignore: use_build_context_synchronously
         context,
-        MaterialPageRoute(
-            builder: (context) => MyApp()), // Navigate to MyApp (Main Screen)
+        MaterialPageRoute(builder: (context) => MyApp()),
       );
     } catch (e) {
       if (kDebugMode) {
         print("Error logging out: $e");
-      } // Log any errors that happen during logout
+      }
     }
   }
 }
 
-// Example service detail page (You can replace it with a detailed service page)
+class SCCarpetCleaningApp {}
+
 class ServiceDetailPage extends StatelessWidget {
   final Map<String, dynamic> service;
 
