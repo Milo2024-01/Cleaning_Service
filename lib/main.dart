@@ -84,106 +84,100 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Diagonal White Line
+          // Yellow Background
+          Container(
+            color: Colors.yellow.shade200,
+          ),
+
+          // White Curve Line
           Positioned(
-            top: -MediaQuery.of(context).size.width * 0.5,
-            left: -MediaQuery.of(context).size.width * 0.5,
-            child: Transform.rotate(
-              angle: 0.785, // 45 degrees in radians
-              child: Container(
-                width: MediaQuery.of(context).size.width * 1.5,
-                height: 2,
-                // ignore: deprecated_member_use
-                color: Colors.white.withOpacity(0.5),
-              ),
+            top: -MediaQuery.of(context).size.height * 0.2,
+            left: -MediaQuery.of(context).size.width * 0.2,
+            child: CustomPaint(
+              size: Size(MediaQuery.of(context).size.width * 1.5,
+                  MediaQuery.of(context).size.height * 0.6),
+              painter: CurvePainter(),
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.yellow, Colors.yellow.shade200],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Cleaning Service Icon
-                      Icon(
-                        Icons.cleaning_services,
-                        size: 80,
-                        color: Colors.yellow.shade700,
-                      ),
-                      const SizedBox(height: 20),
 
-                      // Title Text
-                      Text(
-                        'Login',
-                        style: TextStyle(
-                          fontSize: 34,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                          fontFamily: 'Roboto', // Modern font
-                        ),
-                      ),
-                      const SizedBox(height: 30),
+          // Login Form
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Cleaning Service Icon
+                    Icon(
+                      Icons.cleaning_services,
+                      size: 80,
+                      color: Colors.yellow.shade700,
+                    ),
+                    const SizedBox(height: 20),
 
-                      // Email Text Field
-                      _buildTextField(
-                        controller: _usernameController,
-                        hint: 'Enter your email',
-                        icon: Icons.email,
+                    // Title Text
+                    Text(
+                      'Login',
+                      style: TextStyle(
+                        fontSize: 34,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                        fontFamily: 'Roboto', // Modern font
                       ),
-                      const SizedBox(height: 20),
+                    ),
+                    const SizedBox(height: 30),
 
-                      // Password Text Field
-                      _buildTextField(
-                        controller: _passwordController,
-                        hint: 'Enter your password',
-                        icon: Icons.lock,
-                        obscureText: true,
-                      ),
-                      const SizedBox(height: 20),
+                    // Email Text Field
+                    _buildTextField(
+                      controller: _usernameController,
+                      hint: 'Enter your email',
+                      icon: Icons.email,
+                    ),
+                    const SizedBox(height: 20),
 
-                      // Login Button
-                      _buildButton(
-                        text: 'Login',
-                        onPressed: _signInWithEmail,
-                      ),
-                      const SizedBox(height: 20),
+                    // Password Text Field
+                    _buildTextField(
+                      controller: _passwordController,
+                      hint: 'Enter your password',
+                      icon: Icons.lock,
+                      obscureText: true,
+                    ),
+                    const SizedBox(height: 20),
 
-                      // Forgot Password Button
-                      _buildTextButton(
-                        text: 'Forgot Password?',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ForgotPasswordScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 10),
+                    // Login Button
+                    _buildButton(
+                      text: 'Login',
+                      onPressed: _signInWithEmail,
+                    ),
+                    const SizedBox(height: 20),
 
-                      // Sign-up Button
-                      _buildTextButton(
-                        text: 'Don\'t have an account? Sign up',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => RegisterPage()),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                    // Forgot Password Button
+                    _buildTextButton(
+                      text: 'Forgot Password?',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ForgotPasswordScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Sign-up Button
+                    _buildTextButton(
+                      text: 'Don\'t have an account? Sign up',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => RegisterPage()),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -262,4 +256,38 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+}
+
+// Custom Painter for the Curve Line
+class CurvePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill
+      ..strokeWidth = 0;
+
+    final path = Path();
+    path.moveTo(0, size.height * 0.6);
+    path.quadraticBezierTo(
+      size.width * 0.3,
+      size.height * 0.4,
+      size.width * 0.6,
+      size.height * 0.6,
+    );
+    path.quadraticBezierTo(
+      size.width * 0.9,
+      size.height * 0.8,
+      size.width,
+      size.height * 0.6,
+    );
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

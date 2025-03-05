@@ -7,6 +7,7 @@ import 'specialized_cleaning/scpestcontrol_service.dart';
 import 'specialized_cleaning/scwatertank_cleaning.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'specialized_cleaning/sccarinterior_cleaning.dart';
 
 class SpecializeCleaningPage extends StatelessWidget {
   SpecializeCleaningPage({super.key});
@@ -180,11 +181,18 @@ class SpecializeCleaningPage extends StatelessWidget {
                           );
                         } else if (services[index]['label'] ==
                             'Water Tank Cleaning') {
-                          // ✅ Navigation for Water Tank Cleaning
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => WaterTankCleaningPage(),
+                            ),
+                          );
+                        } else if (services[index]['label'] ==
+                            'Car Interior Detailing') {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CarDetailingApp(),
                             ),
                           );
                         } else {
