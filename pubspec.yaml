@@ -41,6 +41,11 @@ dependencies:
   cloud_firestore: ^5.6.3
   table_calendar: ^3.0.9
   intl: ^0.20.2
+  mailer: ^6.0.1
+  image_picker: ^1.1.2
+  file_picker: ^6.1.1
+  http: ^0.13.5
+
 
 
 

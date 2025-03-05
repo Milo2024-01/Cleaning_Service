@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+import '../payment_upload.dart'; // Import the payment upload screen
 
 class CalendarBookingScreen extends StatefulWidget {
   final int itemSize;
@@ -54,6 +55,7 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
     String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
     String formattedTime = _selectedTime!.format(context);
 
+    // Show confirmation message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -66,6 +68,19 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
         ),
       ),
     );
+
+    // Navigate to the payment upload screen
+    Future.delayed(const Duration(seconds: 2), () {
+      Navigator.push(
+        // ignore: use_build_context_synchronously
+        context,
+        MaterialPageRoute(
+          builder: (context) => PaymentUploadScreen(
+            totalCost: widget.totalCost,
+          ),
+        ),
+      );
+    });
   }
 
   @override
@@ -90,7 +105,6 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              // Inline Calendar
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
@@ -139,8 +153,6 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Time Picker Button
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
@@ -160,8 +172,6 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-
-              // Display Item Count and Total Cost
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
@@ -203,8 +213,6 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Confirm Booking Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
