@@ -94,6 +94,7 @@ class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
             child: Container(
               padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
+                // ignore: deprecated_member_use
                 color: Colors.white.withOpacity(0.9),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
