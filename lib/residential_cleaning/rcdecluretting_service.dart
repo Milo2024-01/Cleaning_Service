@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../calendar_booking.dart'; // Import the booking screen
 
 class RCCDeclutteringServicePage extends StatefulWidget {
   const RCCDeclutteringServicePage({super.key});
@@ -27,6 +28,35 @@ class _RCCDeclutteringServicePageState
         hours--;
       });
     }
+  }
+
+  void _bookNow() {
+    if (hours < 1) {
+      _showSnackbar('Please select at least 1 hour.');
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CalendarBookingScreen(
+          itemSize: hours, // Pass selected hours
+          totalCost: totalCost.toInt(), // Pass calculated cost
+        ),
+      ),
+    );
+  }
+
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
   }
 
   @override
@@ -129,9 +159,7 @@ class _RCCDeclutteringServicePageState
                       const SizedBox(height: 20),
                       Center(
                         child: ElevatedButton(
-                          onPressed: () {
-                            // Booking functionality here
-                          },
+                          onPressed: _bookNow, // Navigate to booking
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.deepPurple,
                             padding: const EdgeInsets.symmetric(

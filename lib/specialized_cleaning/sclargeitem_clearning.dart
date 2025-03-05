@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../calendar_booking.dart';
 import '../specialize_cleaning.dart';
 
 class LargeItemCleaningPage extends StatefulWidget {
@@ -13,48 +14,15 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
   final int priceSmall = 1000;
   final int priceLarge = 2500;
 
-  int get totalCost =>
-      itemSize > 5 ? priceLarge : priceSmall; // Auto Calculation
+  int get totalCost => itemSize > 5 ? priceLarge : priceSmall;
 
   void _bookService() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.amber[50],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            "Booking Confirmation",
-            style: TextStyle(
-              color: Colors.amber[900],
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Text(
-            "You have booked cleaning for a life-size stuffed toy of $itemSize ft.\nTotal Cost: ₱$totalCost",
-            style: const TextStyle(
-              color: Colors.black87,
-              fontSize: 16,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                "OK",
-                style: TextStyle(
-                  color: Colors.amber[900],
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            CalendarBookingScreen(itemSize: itemSize, totalCost: totalCost),
+      ),
     );
   }
 
@@ -102,7 +70,6 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
               ),
               child: Column(
                 children: [
-                  // Service Details Card
                   Card(
                     elevation: 8,
                     shape: RoundedRectangleBorder(
@@ -131,7 +98,6 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                     ),
                   ),
                   const SizedBox(height: 30),
-
                   Text(
                     'Life-Size Stuffed Toy Cleaning',
                     style: TextStyle(
@@ -141,8 +107,6 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // Cost Calculator Card
                   Card(
                     elevation: 8,
                     shape: RoundedRectangleBorder(
@@ -152,7 +116,6 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          // Size Slider
                           Row(
                             children: [
                               Icon(Icons.height, color: Colors.amber[800]),
@@ -192,10 +155,7 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 30),
-
-                  // Total Cost
                   Center(
                     child: Text(
                       'Total Cost: ₱$totalCost',
@@ -206,10 +166,7 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 30),
-
-                  // Book Now Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -227,10 +184,7 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 40),
-
-                  // Icon Decoration
                   Center(
                     child: Icon(
                       Icons.clean_hands,

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../specialize_cleaning.dart';
+import '../calendar_booking.dart';
 
 void main() {
-  runApp(CarDetailingApp());
+  runApp(const CarDetailingApp());
 }
 
 class CarDetailingApp extends StatelessWidget {
@@ -12,7 +13,7 @@ class CarDetailingApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: CarDetailingScreen(),
+      home: const CarDetailingScreen(),
     );
   }
 }
@@ -33,21 +34,49 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
     {'type': 'Bus (60 Seater)', 'price': 20000, 'quantity': 0},
   ];
 
-  double get totalCost =>
-      services.fold(0, (sum, item) => sum + (item['price'] * item['quantity']));
+  int get totalCost => services.fold<int>(0, (sum, item) {
+        return sum +
+            ((item['price'] as num).toInt() * (item['quantity'] as int));
+      });
+
+  int get totalItems => services.fold<int>(0, (sum, item) {
+        return sum + (item['quantity'] as int);
+      });
 
   void _increaseQuantity(int index) {
     setState(() {
-      services[index]['quantity']++;
+      services[index]['quantity'] = (services[index]['quantity'] as int) + 1;
     });
   }
 
   void _decreaseQuantity(int index) {
     setState(() {
-      if (services[index]['quantity'] > 0) {
-        services[index]['quantity']--;
+      if ((services[index]['quantity'] as int) > 0) {
+        services[index]['quantity'] = (services[index]['quantity'] as int) - 1;
       }
     });
+  }
+
+  void _navigateToBooking() {
+    if (totalItems == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one service before booking.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CalendarBookingScreen(
+          itemSize: totalItems,
+          totalCost: totalCost,
+        ),
+      ),
+    );
   }
 
   @override
@@ -65,9 +94,8 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             if (Navigator.canPop(context)) {
-              Navigator.pop(context); // Go back to the previous screen
+              Navigator.pop(context);
             } else {
-              // If there's no previous screen, explicitly go to SpecializeCleaningScreen
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
@@ -168,9 +196,7 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
                       const SizedBox(height: 20),
                       Center(
                         child: ElevatedButton(
-                          onPressed: () {
-                            // Booking functionality here
-                          },
+                          onPressed: _navigateToBooking,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.teal,
                             padding: const EdgeInsets.symmetric(
@@ -187,15 +213,6 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
                       ),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Center(
-                child: Icon(
-                  Icons.car_repair,
-                  size: 100,
-                  // ignore: deprecated_member_use
-                  color: Colors.white.withOpacity(0.3),
                 ),
               ),
             ],

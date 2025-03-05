@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../calendar_booking.dart';
 
 class GreaseTrapCleaningCalculator extends StatefulWidget {
   const GreaseTrapCleaningCalculator({super.key});
@@ -18,6 +19,18 @@ class _GreaseTrapCleaningCalculatorState
     setState(() {
       totalCost = numberOfTraps * costPerTrap;
     });
+  }
+
+  void _bookService() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CalendarBookingScreen(
+          itemSize: numberOfTraps,
+          totalCost: totalCost,
+        ),
+      ),
+    );
   }
 
   @override
@@ -65,7 +78,6 @@ class _GreaseTrapCleaningCalculatorState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Service Details Card
               Card(
                 elevation: 5,
                 shape: RoundedRectangleBorder(
@@ -81,7 +93,7 @@ class _GreaseTrapCleaningCalculatorState
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.red[900], // Dark red text
+                          color: Colors.red[900],
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -97,21 +109,17 @@ class _GreaseTrapCleaningCalculatorState
                 ),
               ),
               const SizedBox(height: 30),
-
-              // Cost per trap info
               Center(
                 child: Text(
                   'Cost per trap: ₱850',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.red[900], // Dark red text
+                    color: Colors.red[900],
                   ),
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Number of Traps Input
               Card(
                 elevation: 5,
                 shape: RoundedRectangleBorder(
@@ -126,7 +134,7 @@ class _GreaseTrapCleaningCalculatorState
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.red[900], // Dark red text
+                          color: Colors.red[900],
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -168,64 +176,20 @@ class _GreaseTrapCleaningCalculatorState
                 ),
               ),
               const SizedBox(height: 30),
-
-              // Total Cost Display
               Center(
                 child: Text(
                   'Total Cost: ₱$totalCost',
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87, // Dark text for contrast
+                    color: Colors.black87,
                   ),
                 ),
               ),
               const SizedBox(height: 30),
-
-              // Book Now Button
               Center(
                 child: ElevatedButton(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          backgroundColor: Colors.red[50],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          title: Text(
-                            "Booking Confirmation",
-                            style: TextStyle(
-                              color: Colors.red[900],
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          content: Text(
-                            "You have booked cleaning for $numberOfTraps trap(s).\nTotal Cost: ₱$totalCost",
-                            style: const TextStyle(
-                              color: Colors.black87,
-                              fontSize: 16,
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: Text(
-                                "OK",
-                                style: TextStyle(
-                                  color: Colors.red[900],
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
+                  onPressed: _bookService,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red[800],
                     padding: const EdgeInsets.symmetric(

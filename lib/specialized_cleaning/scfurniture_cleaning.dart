@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../specialize_cleaning.dart';
+import '../calendar_booking.dart';
 
 class ServiceScreen extends StatefulWidget {
   const ServiceScreen({super.key});
@@ -39,6 +40,39 @@ class _ServiceScreenState extends State<ServiceScreen> {
     return total;
   }
 
+  int getTotalItems() {
+    int totalItems = 0;
+    quantities.forEach((key, value) {
+      totalItems += value;
+    });
+    return totalItems;
+  }
+
+  void _navigateToBooking() {
+    int totalItems = getTotalItems();
+    int totalCost = getTotalPrice();
+
+    if (totalItems == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one service before booking.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CalendarBookingScreen(
+          itemSize: totalItems,
+          totalCost: totalCost,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,12 +85,9 @@ class _ServiceScreenState extends State<ServiceScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            // Navigate back to SpecializeCleaningPage
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) => SpecializeCleaningPage(),
-              ),
+              MaterialPageRoute(builder: (context) => SpecializeCleaningPage()),
             );
           },
         ),
@@ -108,13 +139,16 @@ class _ServiceScreenState extends State<ServiceScreen> {
                                 Text(
                                   service,
                                   style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
-                                Text("₱${services[service]}",
-                                    style: TextStyle(
-                                        fontSize: 16, color: Colors.grey[700])),
+                                Text(
+                                  "₱${services[service]}",
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.grey[700]),
+                                ),
                               ],
                             ),
                             Row(
@@ -160,27 +194,42 @@ class _ServiceScreenState extends State<ServiceScreen> {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
                     children: [
-                      const Text("Total Price:",
-                          style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold)),
-                      Text("₱${getTotalPrice()}",
-                          style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blueAccent)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text("Total Items:",
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text(
+                            "${getTotalItems()}",
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text("Total Price:",
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold)),
+                          Text("₱${getTotalPrice()}",
+                              style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blueAccent)),
+                        ],
+                      ),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text("Service Booked Successfully!")));
-                },
+                onPressed: _navigateToBooking, // Navigate to Calendar Booking
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueAccent,
                   padding:

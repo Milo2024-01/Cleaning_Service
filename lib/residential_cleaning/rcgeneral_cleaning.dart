@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../calendar_booking.dart';
 
 void main() {
   runApp(const RCGeneralCleaningApp());
@@ -46,44 +47,14 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
   double get totalCost => ratePerHour * hours * cleaners; // Auto calculation
 
   void _bookService() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.amber[50],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            "Booking Confirmation",
-            style: TextStyle(
-              color: Colors.amber[900],
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Text(
-            "You have booked $cleaners cleaner(s) for $hours hour(s).\nTotal Cost: ₱${totalCost.toStringAsFixed(2)}",
-            style: const TextStyle(
-              color: Colors.black87,
-              fontSize: 16,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                "OK",
-                style: TextStyle(
-                  color: Colors.amber[900],
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CalendarBookingScreen(
+          itemSize: cleaners,
+          totalCost: totalCost.toInt(),
+        ),
+      ),
     );
   }
 
@@ -122,7 +93,6 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                // Service Details Card
                 Card(
                   elevation: 5,
                   shape: RoundedRectangleBorder(
@@ -151,7 +121,6 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                   ),
                 ),
                 const SizedBox(height: 30),
-
                 Text(
                   'Cleaning Service Cost',
                   style: TextStyle(
@@ -161,8 +130,6 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Cost Calculator Card
                 Card(
                   elevation: 5,
                   shape: RoundedRectangleBorder(
@@ -172,7 +139,6 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        // Hours Slider
                         Row(
                           children: [
                             Icon(Icons.timer, color: Colors.amber[800]),
@@ -209,8 +175,6 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                           ],
                         ),
                         const SizedBox(height: 10),
-
-                        // Cleaners Slider
                         Row(
                           children: [
                             Icon(Icons.people, color: Colors.amber[800]),
@@ -250,24 +214,7 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 30),
-
-                // Total Cost
-                Center(
-                  child: Text(
-                    'Total Cost: ₱${totalCost.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber[900],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                // Book Now Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -283,17 +230,6 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                       'Book Service',
                       style: TextStyle(fontSize: 18, color: Colors.white),
                     ),
-                  ),
-                ),
-
-                const SizedBox(height: 40),
-
-                // Icon Decoration
-                Center(
-                  child: Icon(
-                    Icons.cleaning_services,
-                    size: 100,
-                    color: Colors.amber[300],
                   ),
                 ),
               ],

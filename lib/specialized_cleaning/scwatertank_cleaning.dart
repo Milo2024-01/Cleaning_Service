@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../specialize_cleaning.dart'; // Import SpecializeCleaningPage
+import '../calendar_booking.dart'; // Import CalendarBookingScreen
 
 class WaterTankCleaningPage extends StatefulWidget {
   const WaterTankCleaningPage({super.key});
@@ -21,44 +22,26 @@ class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
   }
 
   void _bookService() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.purple[50],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            "Booking Confirmation",
-            style: TextStyle(
-              color: Colors.purple[900],
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Text(
-            "You have booked Water Tank Cleaning for ${_areaController.text} sqm.\nTotal Cost: ₱$totalCost",
-            style: const TextStyle(
-              color: Colors.black87,
-              fontSize: 16,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                "OK",
-                style: TextStyle(
-                  color: Colors.purple[900],
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+    double areaSize = double.tryParse(_areaController.text) ?? 0;
+
+    if (areaSize <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid tank size.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CalendarBookingScreen(
+          itemSize: areaSize.toInt(),
+          totalCost: totalCost,
+        ),
+      ),
     );
   }
 

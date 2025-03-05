@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../calendar_booking.dart'; // Import the Calendar Booking Screen
 
 class DeepCleaningCalculator extends StatefulWidget {
   const DeepCleaningCalculator({super.key});
@@ -9,12 +10,37 @@ class DeepCleaningCalculator extends StatefulWidget {
 
 class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
   double areaSize = 1.0; // Default to 1 sqm
-  double totalCost = 55.0; // Cost per square meter for deep cleaning
+  final double ratePerSqm = 55.0; // Cost per square meter for deep cleaning
 
-  void calculateTotalCost() {
-    setState(() {
-      totalCost = areaSize * 55; // 55 Pesos per sqm for deep cleaning
-    });
+  double get totalCost => areaSize * ratePerSqm; // Auto calculate total cost
+
+  void _bookNow() {
+    if (areaSize < 1) {
+      _showSnackbar('Please select an area size of at least 1 sqm.');
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CalendarBookingScreen(
+          itemSize: areaSize.toInt(), // Pass selected area size
+          totalCost: totalCost.toInt(), // Pass calculated cost
+        ),
+      ),
+    );
+  }
+
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
   }
 
   @override
@@ -51,7 +77,7 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
             color: Colors.white.withOpacity(0.9),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
-              BoxShadow(
+              const BoxShadow(
                 color: Colors.black26,
                 blurRadius: 8,
                 spreadRadius: 2,
@@ -116,7 +142,6 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
                 onChanged: (double value) {
                   setState(() {
                     areaSize = value;
-                    calculateTotalCost();
                   });
                 },
               ),
@@ -138,50 +163,7 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
               // Book Now Button
               Center(
                 child: ElevatedButton(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          backgroundColor:
-                              Colors.deepOrange[50], // Light orange background
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(20), // Rounded corners
-                          ),
-                          title: Text(
-                            "Booking Confirmation",
-                            style: TextStyle(
-                              color: Colors.deepOrange[900], // Dark orange text
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          content: Text(
-                            "You have booked deep cleaning for ${areaSize.toStringAsFixed(1)} sqm.\nTotal Cost: ₱${totalCost.toStringAsFixed(2)}",
-                            style: const TextStyle(
-                              color: Colors.black87,
-                              fontSize: 16,
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop(); // Close the dialog
-                              },
-                              child: Text(
-                                "OK",
-                                style: TextStyle(
-                                  color: Colors
-                                      .deepOrange[900], // Dark orange text
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
+                  onPressed: _bookNow, // Navigate to booking screen
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
                         Colors.deepOrange[800], // Dark orange button
