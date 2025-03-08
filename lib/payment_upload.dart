@@ -1,10 +1,38 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore for user data
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart'; // Firebase Storage for file uploads
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:mailer/mailer.dart';
-import 'package:mailer/smtp_server/gmail.dart';
+import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart'; // For logging errors
+import 'package:mime/mime.dart'; // For MIME type detection
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Payment Proof Upload',
+      theme: ThemeData(
+        primarySwatch: Colors.teal,
+      ),
+      home: PaymentUploadScreen(totalCost: 3120),
+    );
+  }
+}
 
 class PaymentUploadScreen extends StatefulWidget {
   final int totalCost;
@@ -22,6 +50,11 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
   bool _isSending = false;
   bool _isPickingFile = false;
 
+  final Logger _logger = Logger(); // Logger for error handling
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+
   Future<void> _pickFile() async {
     setState(() {
       _isPickingFile = true; // Show loading indicator while picking file
@@ -34,30 +67,60 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
       );
 
       if (result != null) {
+        final file = result.files.first;
+
+        // Validate file type
+        if (!file.name.toLowerCase().endsWith('.jpg') &&
+            !file.name.toLowerCase().endsWith('.jpeg') &&
+            !file.name.toLowerCase().endsWith('.png')) {
+          // ignore: use_build_context_synchronously
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content:
+                    Text('Please select a valid image file (JPG, JPEG, PNG).')),
+          );
+          return;
+        }
+
+        // Validate file size (5 MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+          // ignore: use_build_context_synchronously
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('File size should be less than 5 MB.')),
+          );
+          return;
+        }
+
         if (kIsWeb) {
           // Web: Store file bytes & name (No File path)
           setState(() {
-            _fileBytes = result.files.first.bytes;
-            _fileName = result.files.first.name;
+            _fileBytes = file.bytes;
+            _fileName = file.name;
           });
         } else {
           // Mobile: Use file path
           setState(() {
-            _selectedFile = File(result.files.single.path!);
+            _selectedFile = File(file.path!);
+            _fileName = file.name;
           });
         }
 
+        // Show success message
         // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('File selected successfully!')),
         );
       } else {
+        // User canceled file selection
         // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('File selection canceled.')),
         );
       }
     } catch (e) {
+      // Log and show error
+      _logger.e('Error picking file: $e');
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error picking file: $e')),
@@ -67,6 +130,16 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
         _isPickingFile = false; // Hide loading indicator
       });
     }
+  }
+
+  Future<String> uploadFileToFirebaseStorage(
+      Uint8List fileBytes, String fileName) async {
+    final Reference storageRef =
+        _storage.ref().child('payment_proofs/$fileName');
+    final UploadTask uploadTask = storageRef.putData(fileBytes);
+    final TaskSnapshot snapshot = await uploadTask;
+    final String downloadURL = await snapshot.ref.getDownloadURL();
+    return downloadURL;
   }
 
   Future<void> _sendEmail() async {
@@ -81,34 +154,46 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
       _isSending = true;
     });
 
-    if (kIsWeb) {
-      // Web: Show a message that email sending is not supported
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Email sending is not supported on the web.')),
-      );
-      setState(() {
-        _isSending = false;
-      });
-      return;
-    }
-
-    // Mobile: Use the mailer package to send the email
-    final smtpServer = gmail('your-email@gmail.com', 'your-app-password');
-
-    final message = Message()
-      ..from = Address('your-email@gmail.com', 'Cleaning Service')
-      ..recipients.add('laurapresley4@gmail.com') // Admin email
-      ..subject = 'Payment Proof - Cleaning Service'
-      ..text =
-          'Attached is the proof of payment. Total Cost: ₱${widget.totalCost}';
-
-    if (_selectedFile != null) {
-      message.attachments.add(FileAttachment(_selectedFile!));
-    }
-
     try {
-      await send(message, smtpServer);
+      Uint8List fileBytes;
+      String fileMimeType;
+
+      if (kIsWeb && _fileBytes != null) {
+        fileBytes = _fileBytes!;
+        fileMimeType = _getMimeType(_fileName);
+      } else if (_selectedFile != null) {
+        fileBytes = await _selectedFile!.readAsBytes();
+        fileMimeType = _getMimeType(_fileName);
+      } else {
+        throw Exception('No file selected');
+      }
+
+      // Upload file to Firebase Storage
+      final String fileUrl =
+          await uploadFileToFirebaseStorage(fileBytes, _fileName!);
+
+      // Fetch user data from Firebase
+      final User? user = _auth.currentUser;
+      if (user == null) {
+        throw Exception('User not logged in');
+      }
+
+      // Fetch the user's first name from Firestore
+      final DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(user.uid).get();
+      final String firstName = userDoc.get('first_name') ?? 'User';
+
+      // Send email using EmailService
+      await EmailService.sendEmail(
+        totalCost: widget.totalCost,
+        fileUrl: fileUrl, // Send the file URL instead of Base64
+        fileName: _fileName ?? 'payment_proof.jpg',
+        fileMimeType: fileMimeType,
+        email: user.email!, // Email from Firebase Authentication
+        firstName: firstName, // First name from Firestore
+      );
+
+      // Show success message and navigate back
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Payment proof sent successfully!')),
@@ -116,6 +201,8 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
       // ignore: use_build_context_synchronously
       Navigator.pop(context);
     } catch (e) {
+      // Log and show error
+      _logger.e('Error sending email: $e');
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error sending email: $e')),
@@ -127,12 +214,19 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
     }
   }
 
+  // Helper function to get MIME type based on file extension
+  String _getMimeType(String? fileName) {
+    if (fileName == null) return 'application/octet-stream'; // Default fallback
+    final mimeType = lookupMimeType(fileName);
+    return mimeType ?? 'application/octet-stream';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Upload Payment Proof',
+          'Proof Payment',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -192,13 +286,7 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
                     if (_isPickingFile)
                       const CircularProgressIndicator()
                     else if (kIsWeb && _fileBytes != null)
-                      Text(
-                        'File selected: $_fileName',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade800,
-                        ),
-                      )
+                      Image.memory(_fileBytes!, height: 200)
                     else if (!kIsWeb && _selectedFile != null)
                       Image.file(_selectedFile!, height: 200)
                     else
@@ -206,7 +294,7 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
                         'No file selected',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Color.fromARGB(255, 117, 115, 115),
+                          color: Color.fromARGB(255, 109, 108, 108),
                         ),
                       ),
                     const SizedBox(height: 20),
@@ -236,7 +324,7 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
 
             // Send Payment Proof Button
             ElevatedButton(
-              onPressed: _isSending ? null : _sendEmail,
+              onPressed: (_isSending || _isPickingFile) ? null : _sendEmail,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 padding:
@@ -259,5 +347,44 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
         ),
       ),
     );
+  }
+}
+
+class EmailService {
+  static const String serviceId = 'service_2329r2d';
+  static const String templateId = 'template_4ggkiqv';
+  static const String userId = 'iftJdd3HapoZq9bzR';
+
+  static Future<void> sendEmail({
+    required int totalCost,
+    required String fileUrl,
+    required String fileName,
+    required String fileMimeType,
+    required String email,
+    required String firstName,
+  }) async {
+    final requestBody = {
+      'service_id': serviceId,
+      'template_id': templateId,
+      'user_id': userId,
+      'template_params': {
+        'totalCost': totalCost.toString(),
+        'fileUrl': fileUrl, // Send the file URL
+        'fileName': fileName,
+        'fileMimeType': fileMimeType,
+        'email': email,
+        'first_name': firstName,
+      },
+    };
+
+    final response = await http.post(
+      Uri.parse('https://api.emailjs.com/api/v1.0/email/send'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(requestBody),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to send email: ${response.body}');
+    }
   }
 }
