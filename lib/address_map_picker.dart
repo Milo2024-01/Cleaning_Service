@@ -34,6 +34,7 @@ class _AddressMapPickerState extends State<AddressMapPicker> {
       }
     } catch (e) {
       _addressController.text = 'Failed to fetch address';
+      // ignore: avoid_print
       print('Error fetching address: $e');
     }
   }

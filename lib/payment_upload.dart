@@ -13,6 +13,7 @@ import 'package:image/image.dart' as img;
 import 'package:google_fonts/google_fonts.dart';
 import 'address_map_picker.dart';
 import 'email_service.dart'; // Import EmailService if defined in a separate file
+import 'home_service.dart'; // Import HomeServicePage
 
 class PaymentUploadScreen extends StatefulWidget {
   final int totalCost;
@@ -284,8 +285,16 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
       await _saveBookingDetails(user.uid, firstName, user.email!);
 
       _showMessage('Payment proof sent successfully!', success: true);
+
+      // Navigate to HomeServicePage after successful submission
       // ignore: use_build_context_synchronously
-      Navigator.pop(context);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              HomeServicePage(), // Navigate to HomeServicePage
+        ),
+      );
     } catch (e) {
       _logger.e('Error sending email: $e');
       _showMessage('Error sending email: $e');
@@ -308,6 +317,7 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
         'address': _selectedAddress,
         'location':
             GeoPoint(_selectedLocation!.latitude, _selectedLocation!.longitude),
+        'status': 'pending', // Add status field with value "pending"
         'timestamp': FieldValue.serverTimestamp(),
       };
 
