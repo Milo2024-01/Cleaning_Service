@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
-import '../payment_upload.dart'; // Import the payment upload screen
+import 'payment_upload.dart'; // Import the payment upload screen
 
 class CalendarBookingScreen extends StatefulWidget {
   final int itemSize;
@@ -77,6 +77,9 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
         MaterialPageRoute(
           builder: (context) => PaymentUploadScreen(
             totalCost: widget.totalCost,
+            selectedDate: _selectedDate, // Pass the selected date
+            selectedTime: _selectedTime, // Pass the selected time
+            itemSize: widget.itemSize, // Pass the item size
           ),
         ),
       );
