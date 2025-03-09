@@ -60,17 +60,15 @@ class _LoginPageState extends State<LoginPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login Successful')),
       );
-
-      // Navigate to Home Service Page after successful login
-      // ignore: use_build_context_synchronously
       Navigator.pushReplacement(
         // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(builder: (context) => HomeServicePage()),
       );
     } catch (e) {
-      // ignore: avoid_print
-      print("Error during login: $e");
+      if (kDebugMode) {
+        print("Error during login: $e");
+      }
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -85,11 +83,9 @@ class _LoginPageState extends State<LoginPage> {
       body: Stack(
         children: [
           // Yellow Background
-          Container(
-            color: const Color.fromARGB(255, 250, 225, 0),
-          ),
+          Container(color: const Color.fromARGB(255, 250, 225, 0)),
 
-          // White Curve Line
+          // White & Blue Curved Design
           Positioned(
             top: -MediaQuery.of(context).size.height * 0.2,
             left: -MediaQuery.of(context).size.width * 0.2,
@@ -108,75 +104,37 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Cleaning Service Icon
-                    Icon(
-                      Icons.cleaning_services,
-                      size: 80,
-                      color: Colors.yellow.shade700,
-                    ),
+                    Icon(Icons.cleaning_services,
+                        size: 80, color: Colors.yellow.shade700),
                     const SizedBox(height: 20),
-
-                    // Title Text
-                    Text(
-                      'Login',
-                      style: TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                        fontFamily: 'Roboto', // Modern font
-                      ),
-                    ),
+                    Text('Login',
+                        style: TextStyle(
+                            fontSize: 34,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87)),
                     const SizedBox(height: 30),
-
-                    // Email Text Field
                     _buildTextField(
-                      controller: _usernameController,
-                      hint: 'Enter your email',
-                      icon: Icons.email,
-                    ),
+                        _usernameController, 'Enter your email', Icons.email),
                     const SizedBox(height: 20),
-
-                    // Password Text Field
                     _buildTextField(
-                      controller: _passwordController,
-                      hint: 'Enter your password',
-                      icon: Icons.lock,
-                      obscureText: true,
-                    ),
+                        _passwordController, 'Enter your password', Icons.lock,
+                        obscureText: true),
                     const SizedBox(height: 20),
-
-                    // Login Button
-                    _buildButton(
-                      text: 'Login',
-                      onPressed: _signInWithEmail,
-                    ),
+                    _buildButton('Login', _signInWithEmail),
                     const SizedBox(height: 20),
-
-                    // Forgot Password Button
                     _buildTextButton(
-                      text: 'Forgot Password?',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ForgotPasswordScreen(),
-                          ),
-                        );
-                      },
-                    ),
+                        'Forgot Password?',
+                        () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ForgotPasswordScreen()))),
                     const SizedBox(height: 10),
-
-                    // Sign-up Button
                     _buildTextButton(
-                      text: 'Don\'t have an account? Sign up',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => RegisterPage()),
-                        );
-                      },
-                    ),
+                        'Don\'t have an account? Sign up',
+                        () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => RegisterPage()))),
                   ],
                 ),
               ),
@@ -187,52 +145,29 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Custom Text Field widget
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    bool obscureText = false,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
+  Widget _buildTextField(
+      TextEditingController controller, String hint, IconData icon,
+      {bool obscureText = false}) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: Colors.yellow.shade700),
+        hintText: hint,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        filled: true,
+        fillColor: Colors.white,
       ),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.yellow.shade700),
-          hintText: hint,
-          border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-        ),
-        obscureText: obscureText,
-      ),
+      obscureText: obscureText,
     );
   }
 
-  // Custom Button widget
-  Widget _buildButton({
-    required String text,
-    required VoidCallback onPressed,
-  }) {
+  Widget _buildButton(String text, VoidCallback onPressed) {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.yellow.shade700,
         padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 40),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 5,
       ),
       child: Text(
@@ -243,11 +178,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Custom TextButton widget
-  Widget _buildTextButton({
-    required String text,
-    required VoidCallback onPressed,
-  }) {
+  Widget _buildTextButton(String text, VoidCallback onPressed) {
     return TextButton(
       onPressed: onPressed,
       child: Text(
@@ -258,34 +189,39 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-// Custom Painter for the Curve Line
 class CurvePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    final whitePaint = Paint()
       ..color = Colors.white
-      ..style = PaintingStyle.fill
-      ..strokeWidth = 0;
+      ..style = PaintingStyle.fill;
+    final bluePaint = Paint()
+      ..color = Colors.blue.shade700
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5;
 
-    final path = Path();
-    path.moveTo(0, size.height * 0.6);
-    path.quadraticBezierTo(
-      size.width * 0.3,
-      size.height * 0.4,
-      size.width * 0.6,
-      size.height * 0.6,
-    );
-    path.quadraticBezierTo(
-      size.width * 0.9,
-      size.height * 0.8,
-      size.width,
-      size.height * 0.6,
-    );
-    path.lineTo(size.width, size.height);
-    path.lineTo(0, size.height);
-    path.close();
+    // White Background Shape
+    final path = Path()
+      ..moveTo(0, size.height * 0.6)
+      ..quadraticBezierTo(size.width * 0.3, size.height * 0.4, size.width * 0.6,
+          size.height * 0.6)
+      ..quadraticBezierTo(
+          size.width * 0.9, size.height * 0.8, size.width, size.height * 0.6)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(path, whitePaint);
 
-    canvas.drawPath(path, paint);
+    // Multiple Blue Lines for a Wavy Effect
+    for (double i = 0.55; i <= 0.7; i += 0.05) {
+      final bluePath = Path()
+        ..moveTo(0, size.height * i)
+        ..quadraticBezierTo(size.width * 0.3, size.height * (i - 0.2),
+            size.width * 0.6, size.height * i)
+        ..quadraticBezierTo(size.width * 0.9, size.height * (i + 0.2),
+            size.width, size.height * i);
+      canvas.drawPath(bluePath, bluePaint);
+    }
   }
 
   @override

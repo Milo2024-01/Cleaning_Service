@@ -2,21 +2,25 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore for user data
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_storage/firebase_storage.dart'; // Firebase Storage for file uploads
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:logger/logger.dart';
+import 'package:mime/mime.dart';
+import 'package:image/image.dart' as img;
 import 'package:http/http.dart' as http;
-import 'package:logger/logger.dart'; // For logging errors
-import 'package:mime/mime.dart'; // For MIME type detection
+import 'package:google_fonts/google_fonts.dart'; // Optional for modern fonts
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -28,8 +32,10 @@ class MyApp extends StatelessWidget {
       title: 'Payment Proof Upload',
       theme: ThemeData(
         primarySwatch: Colors.teal,
+        textTheme: GoogleFonts.poppinsTextTheme(
+            Theme.of(context).textTheme), // Modern font
       ),
-      home: PaymentUploadScreen(totalCost: 3120),
+      home: const PaymentUploadScreen(totalCost: 3120),
     );
   }
 }
@@ -45,114 +51,74 @@ class PaymentUploadScreen extends StatefulWidget {
 
 class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
   File? _selectedFile;
-  Uint8List? _fileBytes; // Store bytes for Web
-  String? _fileName; // Store file name
+  Uint8List? _fileBytes;
+  String? _fileName;
   bool _isSending = false;
   bool _isPickingFile = false;
+  LatLng? _selectedLocation;
+  String? _selectedAddress;
 
-  final Logger _logger = Logger(); // Logger for error handling
+  final Logger _logger = Logger();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   Future<void> _pickFile() async {
-    setState(() {
-      _isPickingFile = true; // Show loading indicator while picking file
-    });
+    setState(() => _isPickingFile = true);
 
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.image,
-        withData: true, // Important for Web (gets bytes instead of path)
+        withData: true,
       );
 
       if (result != null) {
         final file = result.files.first;
+        final String extension = file.name.split('.').last.toLowerCase();
 
-        // Validate file type
-        if (!file.name.toLowerCase().endsWith('.jpg') &&
-            !file.name.toLowerCase().endsWith('.jpeg') &&
-            !file.name.toLowerCase().endsWith('.png')) {
-          // ignore: use_build_context_synchronously
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content:
-                    Text('Please select a valid image file (JPG, JPEG, PNG).')),
-          );
+        if (!['jpg', 'jpeg', 'png'].contains(extension)) {
+          _showMessage('Please select a valid image file (JPG, JPEG, PNG).');
           return;
         }
 
-        // Validate file size (5 MB limit)
         if (file.size > 5 * 1024 * 1024) {
-          // ignore: use_build_context_synchronously
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('File size should be less than 5 MB.')),
-          );
+          _showMessage('File size should be less than 5 MB.');
           return;
         }
 
-        if (kIsWeb) {
-          // Web: Store file bytes & name (No File path)
-          setState(() {
+        setState(() {
+          if (kIsWeb) {
             _fileBytes = file.bytes;
             _fileName = file.name;
-          });
-        } else {
-          // Mobile: Use file path
-          setState(() {
+          } else {
             _selectedFile = File(file.path!);
             _fileName = file.name;
-          });
-        }
+          }
+        });
 
-        // Show success message
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('File selected successfully!')),
-        );
+        _showMessage('File selected successfully!');
       } else {
-        // User canceled file selection
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('File selection canceled.')),
-        );
+        _showMessage('File selection canceled.');
       }
     } catch (e) {
-      // Log and show error
       _logger.e('Error picking file: $e');
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking file: $e')),
-      );
+      _showMessage('Error picking file: $e');
     } finally {
-      setState(() {
-        _isPickingFile = false; // Hide loading indicator
-      });
+      setState(() => _isPickingFile = false);
     }
-  }
-
-  Future<String> uploadFileToFirebaseStorage(
-      Uint8List fileBytes, String fileName) async {
-    final Reference storageRef =
-        _storage.ref().child('payment_proofs/$fileName');
-    final UploadTask uploadTask = storageRef.putData(fileBytes);
-    final TaskSnapshot snapshot = await uploadTask;
-    final String downloadURL = await snapshot.ref.getDownloadURL();
-    return downloadURL;
   }
 
   Future<void> _sendEmail() async {
     if (_selectedFile == null && _fileBytes == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please upload proof of payment')),
-      );
+      _showMessage('Please upload proof of payment');
       return;
     }
 
-    setState(() {
-      _isSending = true;
-    });
+    if (_selectedLocation == null || _selectedAddress == null) {
+      _showMessage('Please select a location and enter an address');
+      return;
+    }
+
+    setState(() => _isSending = true);
 
     try {
       Uint8List fileBytes;
@@ -168,184 +134,312 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
         throw Exception('No file selected');
       }
 
-      // Upload file to Firebase Storage
-      final String fileUrl =
-          await uploadFileToFirebaseStorage(fileBytes, _fileName!);
-
-      // Fetch user data from Firebase
-      final User? user = _auth.currentUser;
-      if (user == null) {
-        throw Exception('User not logged in');
+      final img.Image? image = img.decodeImage(fileBytes);
+      if (image != null) {
+        fileBytes = Uint8List.fromList(img.encodeJpg(image, quality: 50));
       }
 
-      // Fetch the user's first name from Firestore
+      final String base64File = base64Encode(fileBytes);
+
+      if (base64File.length > 50 * 1024) {
+        throw Exception('File size exceeds 50 KB after compression');
+      }
+
+      final User? user = _auth.currentUser;
+      if (user == null) throw Exception('User not logged in');
+
       final DocumentSnapshot userDoc =
           await _firestore.collection('users').doc(user.uid).get();
       final String firstName = userDoc.get('first_name') ?? 'User';
 
-      // Send email using EmailService
       await EmailService.sendEmail(
         totalCost: widget.totalCost,
-        fileUrl: fileUrl, // Send the file URL instead of Base64
+        fileBase64: base64File,
         fileName: _fileName ?? 'payment_proof.jpg',
         fileMimeType: fileMimeType,
-        email: user.email!, // Email from Firebase Authentication
-        firstName: firstName, // First name from Firestore
+        email: user.email!,
+        firstName: firstName,
+        address: _selectedAddress!,
+        location: _selectedLocation!,
       );
 
-      // Show success message and navigate back
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Payment proof sent successfully!')),
-      );
+      _showMessage('Payment proof sent successfully!', success: true);
       // ignore: use_build_context_synchronously
       Navigator.pop(context);
     } catch (e) {
-      // Log and show error
       _logger.e('Error sending email: $e');
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error sending email: $e')),
-      );
+      _showMessage('Error sending email: $e');
     } finally {
-      setState(() {
-        _isSending = false;
-      });
+      setState(() => _isSending = false);
     }
   }
 
-  // Helper function to get MIME type based on file extension
   String _getMimeType(String? fileName) {
-    if (fileName == null) return 'application/octet-stream'; // Default fallback
-    final mimeType = lookupMimeType(fileName);
-    return mimeType ?? 'application/octet-stream';
+    return fileName != null
+        ? lookupMimeType(fileName) ?? 'application/octet-stream'
+        : 'application/octet-stream';
+  }
+
+  void _showMessage(String message, {bool success = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: success ? Colors.green : Colors.red,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Proof Payment',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+        title: const Text('Proof Payment'),
         backgroundColor: Colors.teal,
         centerTitle: true,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Total Cost Card
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Text(
-                      'Total Cost',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade800,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      '₱${widget.totalCost}',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.teal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            _buildTotalCostCard(),
+            const SizedBox(height: 20),
+            _buildFileUploadCard(),
+            const SizedBox(height: 20),
+            AddressMapPicker(
+              onAddressSelected: (LatLng location, String address) {
+                setState(() {
+                  _selectedLocation = location;
+                  _selectedAddress = address;
+                });
+              },
             ),
             const SizedBox(height: 20),
+            _buildSendButton(),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // File Upload Section
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    if (_isPickingFile)
-                      const CircularProgressIndicator()
-                    else if (kIsWeb && _fileBytes != null)
-                      Image.memory(_fileBytes!, height: 200)
-                    else if (!kIsWeb && _selectedFile != null)
-                      Image.file(_selectedFile!, height: 200)
-                    else
-                      const Text(
-                        'No file selected',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color.fromARGB(255, 109, 108, 108),
-                        ),
-                      ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _isPickingFile ? null : _pickFile,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 24),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: const Text(
-                        'Choose File',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+  Widget _buildTotalCostCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text(
+              'Total Cost',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 20),
-
-            // Send Payment Proof Button
-            ElevatedButton(
-              onPressed: (_isSending || _isPickingFile) ? null : _sendEmail,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+            const SizedBox(height: 10),
+            Text(
+              '₱${widget.totalCost}',
+              style: GoogleFonts.poppins(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.teal,
               ),
-              child: _isSending
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text(
-                      'Send Payment Proof',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.white,
-                      ),
-                    ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFileUploadCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            if (_isPickingFile)
+              const CircularProgressIndicator()
+            else if (kIsWeb && _fileBytes != null)
+              Image.memory(_fileBytes!, height: 200)
+            else if (!kIsWeb && _selectedFile != null)
+              Image.file(_selectedFile!, height: 200)
+            else
+              Text(
+                'No file selected',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _isPickingFile ? null : _pickFile,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: Text(
+                'Choose File',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSendButton() {
+    return ElevatedButton(
+      onPressed: (_isSending || _isPickingFile) ? null : _sendEmail,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.teal,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      ),
+      child: _isSending
+          ? const CircularProgressIndicator(color: Colors.white)
+          : Text(
+              'Send Payment Proof',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+    );
+  }
+}
+
+class AddressMapPicker extends StatefulWidget {
+  final Function(LatLng, String) onAddressSelected;
+
+  const AddressMapPicker({super.key, required this.onAddressSelected});
+
+  @override
+  _AddressMapPickerState createState() => _AddressMapPickerState();
+}
+
+class _AddressMapPickerState extends State<AddressMapPicker> {
+  final MapController _mapController = MapController();
+  final TextEditingController _addressController = TextEditingController();
+  LatLng? _selectedLocation;
+
+  Future<void> _fetchAddress(LatLng location) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        location.latitude,
+        location.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark placemark = placemarks.first;
+        String address =
+            '${placemark.street}, ${placemark.locality}, ${placemark.administrativeArea}, ${placemark.country}';
+        _addressController.text = address;
+      } else {
+        _addressController.text = 'Address not found';
+      }
+    } catch (e) {
+      _addressController.text = 'Failed to fetch address';
+      if (kDebugMode) {
+        print('Error fetching address: $e');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(
+          height: 200, // Smaller map height
+          child: FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              center: LatLng(14.5995, 120.9842),
+              zoom: 13.0,
+              onTap: (_, LatLng latlng) async {
+                setState(() {
+                  _selectedLocation = latlng;
+                });
+                await _fetchAddress(latlng);
+              },
+            ),
+            children: [
+              TileLayer(
+                urlTemplate:
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                subdomains: ['a', 'b', 'c'],
+              ),
+              MarkerLayer(
+                markers: [
+                  if (_selectedLocation != null)
+                    Marker(
+                      point: _selectedLocation!,
+                      builder: (ctx) =>
+                          const Icon(Icons.location_on, color: Colors.red),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        TextField(
+          controller: _addressController,
+          decoration: InputDecoration(
+            labelText: 'Enter your address',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        ElevatedButton(
+          onPressed: () {
+            if (_selectedLocation != null &&
+                _addressController.text.isNotEmpty) {
+              widget.onAddressSelected(
+                  _selectedLocation!, _addressController.text);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content:
+                        Text('Please select a location and enter an address')),
+              );
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.teal,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          ),
+          child: Text(
+            'Confirm Address',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -357,11 +451,13 @@ class EmailService {
 
   static Future<void> sendEmail({
     required int totalCost,
-    required String fileUrl,
+    required String fileBase64,
     required String fileName,
     required String fileMimeType,
     required String email,
     required String firstName,
+    required String address,
+    required LatLng location,
   }) async {
     final requestBody = {
       'service_id': serviceId,
@@ -369,11 +465,14 @@ class EmailService {
       'user_id': userId,
       'template_params': {
         'totalCost': totalCost.toString(),
-        'fileUrl': fileUrl, // Send the file URL
+        'fileBase64': fileBase64,
         'fileName': fileName,
         'fileMimeType': fileMimeType,
         'email': email,
         'first_name': firstName,
+        'address': address,
+        'latitude': location.latitude.toString(),
+        'longitude': location.longitude.toString(),
       },
     };
 
