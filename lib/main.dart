@@ -2,9 +2,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Add this import
 import 'forgot_password_screen.dart';
 import 'register_page.dart';
-import 'home_service.dart';
+import 'service_booking.dart'; // Admin page
+import 'home_service.dart'; // Regular user page
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +35,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.teal,
+      ),
       home: LoginPage(),
     );
   }
@@ -46,29 +51,74 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool _rememberMe = false; // Track "Remember Me" state
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials(); // Load saved credentials when the page loads
+  }
+
+  // Load saved email and password from SharedPreferences
+  Future<void> _loadSavedCredentials() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _emailController.text = prefs.getString('email') ?? '';
+      _passwordController.text = prefs.getString('password') ?? '';
+      _rememberMe = prefs.getBool('rememberMe') ?? false;
+    });
+  }
+
+  // Save email and password to SharedPreferences
+  Future<void> _saveCredentials() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (_rememberMe) {
+      await prefs.setString('email', _emailController.text);
+      await prefs.setString('password', _passwordController.text);
+      await prefs.setBool('rememberMe', true);
+    } else {
+      await prefs.remove('email');
+      await prefs.remove('password');
+      await prefs.setBool('rememberMe', false);
+    }
+  }
 
   Future<void> _signInWithEmail() async {
     try {
-      await _auth.signInWithEmailAndPassword(
-        email: _usernameController.text,
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login Successful')),
-      );
-      Navigator.pushReplacement(
+
+      User? user = userCredential.user;
+      if (user != null) {
+        // Save credentials if "Remember Me" is checked
+        await _saveCredentials();
+
         // ignore: use_build_context_synchronously
-        context,
-        MaterialPageRoute(builder: (context) => HomeServicePage()),
-      );
-    } catch (e) {
-      if (kDebugMode) {
-        print("Error during login: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login Successful')),
+        );
+
+        // Redirect based on user type
+        if (user.email == "admincs@gmail.com") {
+          Navigator.pushReplacement(
+            // ignore: use_build_context_synchronously
+            context,
+            MaterialPageRoute(builder: (context) => ServiceBookingPage()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            // ignore: use_build_context_synchronously
+            context,
+            MaterialPageRoute(builder: (context) => HomeServicePage()),
+          );
+        }
       }
+    } catch (e) {
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -82,64 +132,148 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Yellow Background
-          Container(color: const Color.fromARGB(255, 250, 225, 0)),
+          // Yellow background
+          Container(color: Colors.yellow),
 
-          // White & Blue Curved Design
+          // Big and small blue circles
           Positioned(
-            top: -MediaQuery.of(context).size.height * 0.2,
-            left: -MediaQuery.of(context).size.width * 0.2,
-            child: CustomPaint(
-              size: Size(MediaQuery.of(context).size.width * 1.5,
-                  MediaQuery.of(context).size.height * 0.6),
-              painter: CurvePainter(),
-            ),
-          ),
-
-          // Login Form
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.cleaning_services,
-                        size: 80, color: Colors.yellow.shade700),
-                    const SizedBox(height: 20),
-                    Text('Login',
-                        style: TextStyle(
-                            fontSize: 34,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87)),
-                    const SizedBox(height: 30),
-                    _buildTextField(
-                        _usernameController, 'Enter your email', Icons.email),
-                    const SizedBox(height: 20),
-                    _buildTextField(
-                        _passwordController, 'Enter your password', Icons.lock,
-                        obscureText: true),
-                    const SizedBox(height: 20),
-                    _buildButton('Login', _signInWithEmail),
-                    const SizedBox(height: 20),
-                    _buildTextButton(
-                        'Forgot Password?',
-                        () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => ForgotPasswordScreen()))),
-                    const SizedBox(height: 10),
-                    _buildTextButton(
-                        'Don\'t have an account? Sign up',
-                        () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => RegisterPage()))),
-                  ],
-                ),
+            top: -50,
+            left: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                // ignore: deprecated_member_use
+                color: const Color.fromARGB(255, 0, 137, 250).withOpacity(0.8),
               ),
             ),
           ),
+          Positioned(
+            top: 100,
+            right: -50,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                // ignore: deprecated_member_use
+                color: const Color.fromARGB(255, 0, 139, 253).withOpacity(0.8),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -50,
+            left: -50,
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                // ignore: deprecated_member_use
+                color: const Color.fromARGB(255, 0, 140, 255).withOpacity(0.8),
+              ),
+            ),
+          ),
+
+          // White curved background
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: ClipPath(
+              clipper: CurvedWhiteBackgroundClipper(),
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.6,
+                color: const Color.fromARGB(255, 245, 245, 245),
+              ),
+            ),
+          ),
+
+          // Login form
+          Center(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 40), // Space at the top
+                  _buildLoginForm(),
+                  const SizedBox(height: 40), // Space at the bottom
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginForm() {
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.85,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            // ignore: deprecated_member_use
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.cleaning_services,
+              size: 60, color: const Color(0xFFE2CC01)), // Yellow icon
+          const SizedBox(height: 20),
+          Text(
+            'Login',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFFE2CC01), // Yellow text
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildTextField(_emailController, 'Enter your email', Icons.email),
+          const SizedBox(height: 20),
+          _buildTextField(
+              _passwordController, 'Enter your password', Icons.lock,
+              obscureText: true),
+          const SizedBox(height: 10),
+          // "Remember Me" checkbox
+          Row(
+            children: [
+              Checkbox(
+                value: _rememberMe,
+                onChanged: (value) {
+                  setState(() {
+                    _rememberMe = value ?? false;
+                  });
+                },
+                activeColor: const Color(0xFFE2CC01), // Yellow checkbox
+              ),
+              const Text('Remember Me'),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildButton('Login', _signInWithEmail),
+          const SizedBox(height: 20),
+          _buildTextButton(
+              'Forgot Password?',
+              () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => ForgotPasswordScreen()))),
+          const SizedBox(height: 10),
+          _buildTextButton(
+              'Don\'t have an account? Sign up',
+              () => Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => RegisterPage()))),
         ],
       ),
     );
@@ -151,29 +285,40 @@ class _LoginPageState extends State<LoginPage> {
     return TextField(
       controller: controller,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: Colors.yellow.shade700),
+        prefixIcon: Icon(icon, color: const Color(0xFFE2CC01)), // Yellow icon
         hintText: hint,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        filled: true,
-        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide:
+              BorderSide(color: const Color(0xFFE2CC01)), // Yellow border
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+              color: const Color(0xFFE2CC01), width: 2), // Yellow border
+        ),
       ),
       obscureText: obscureText,
     );
   }
 
   Widget _buildButton(String text, VoidCallback onPressed) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.yellow.shade700,
-        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 40),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 5,
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-            color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFE2CC01), // Yellow button
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+              color: Colors.white, fontSize: 18), // White text on yellow button
+        ),
       ),
     );
   }
@@ -183,47 +328,30 @@ class _LoginPageState extends State<LoginPage> {
       onPressed: onPressed,
       child: Text(
         text,
-        style: const TextStyle(color: Colors.black87, fontSize: 16),
+        style: TextStyle(
+          fontSize: 16,
+          color: const Color(0xFFE2CC01), // Yellow text
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
 }
 
-class CurvePainter extends CustomPainter {
+// Custom clipper for white curved background
+class CurvedWhiteBackgroundClipper extends CustomClipper<Path> {
   @override
-  void paint(Canvas canvas, Size size) {
-    final whitePaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    final bluePaint = Paint()
-      ..color = Colors.blue.shade700
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 5;
-
-    // White Background Shape
-    final path = Path()
-      ..moveTo(0, size.height * 0.6)
-      ..quadraticBezierTo(size.width * 0.3, size.height * 0.4, size.width * 0.6,
-          size.height * 0.6)
+  Path getClip(Size size) {
+    Path path = Path()
+      ..moveTo(0, size.height * 0.3)
       ..quadraticBezierTo(
-          size.width * 0.9, size.height * 0.8, size.width, size.height * 0.6)
+          size.width / 2, size.height * 0.1, size.width, size.height * 0.3)
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
-    canvas.drawPath(path, whitePaint);
-
-    // Multiple Blue Lines for a Wavy Effect
-    for (double i = 0.55; i <= 0.7; i += 0.05) {
-      final bluePath = Path()
-        ..moveTo(0, size.height * i)
-        ..quadraticBezierTo(size.width * 0.3, size.height * (i - 0.2),
-            size.width * 0.6, size.height * i)
-        ..quadraticBezierTo(size.width * 0.9, size.height * (i + 0.2),
-            size.width, size.height * i);
-      canvas.drawPath(bluePath, bluePaint);
-    }
+    return path;
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
