@@ -1,14 +1,20 @@
+// ✅ Ensure buildscript is at the top
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.3.0'  // Ensure Gradle Plugin is updated
+        classpath 'com.google.gms:google-services:4.3.10'  // Updated Google Services version
+    }
+}
 
 allprojects {
     repositories {
         google()
         mavenCentral()
     }
-    dependencies{
-        implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
-        implementation("com.google.firebase:firebase-analytics")
-    }
-
 }
 
 rootProject.buildDir = "../build"
@@ -21,13 +27,4 @@ subprojects {
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
-}
-buildscript {
-  repositories {
-    google()  // Ensure this is present
-    mavenCentral()  // Ensure this is present
-  }
-  dependencies {
-    classpath 'com.google.gms:google-services:4.3.3'  // Add this line if missing
-  }
 }

@@ -289,6 +289,7 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
       // Navigate to HomeServicePage after successful submission
       // ignore: use_build_context_synchronously
       Navigator.pushReplacement(
+        // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(
           builder: (context) =>
