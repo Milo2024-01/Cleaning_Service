@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../calendar_booking.dart';
+import '../calendar_booking.dart'; // Import CalendarBookingScreen
 
 class GlassDetailingCalculator extends StatefulWidget {
   const GlassDetailingCalculator({super.key});
@@ -23,10 +23,7 @@ class _GlassDetailingCalculatorState extends State<GlassDetailingCalculator> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CalendarBookingScreen(
-          itemSize: panelCount.toInt(),
-          totalCost: totalCost.toInt(),
-        ),
+        builder: (context) => const CalendarBookingScreen(serviceLabel: 'Glass Detailing'), // Pass service label
       ),
     );
   }
@@ -127,7 +124,7 @@ class _GlassDetailingCalculatorState extends State<GlassDetailingCalculator> {
                 onChanged: (double value) {
                   setState(() {
                     panelCount = value;
-                    calculateTotalCost();
+                    calculateTotalCost(); // Recalculate the cost when the slider changes
                   });
                 },
               ),
@@ -143,9 +140,20 @@ class _GlassDetailingCalculatorState extends State<GlassDetailingCalculator> {
                 ),
               ),
               const SizedBox(height: 30),
+              // Add a note about cost per panel
+              Center(
+                child: Text(
+                  'Cost per panel: ₱150',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.teal[900],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
               Center(
                 child: ElevatedButton(
-                  onPressed: _bookService,
+                  onPressed: _bookService, // Navigate to the booking screen
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.teal[800],
                     padding: const EdgeInsets.symmetric(

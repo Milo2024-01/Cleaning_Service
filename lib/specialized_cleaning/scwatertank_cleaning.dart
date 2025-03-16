@@ -12,14 +12,6 @@ class WaterTankCleaningPage extends StatefulWidget {
 class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
   final TextEditingController _areaController = TextEditingController();
   final int pricePerSqm = 80;
-  int totalCost = 0;
-
-  void _calculateCost() {
-    setState(() {
-      double areaSize = double.tryParse(_areaController.text) ?? 0;
-      totalCost = (areaSize * pricePerSqm).toInt();
-    });
-  }
 
   void _bookService() {
     double areaSize = double.tryParse(_areaController.text) ?? 0;
@@ -34,12 +26,12 @@ class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
       return;
     }
 
+    // Only passing serviceLabel for the navigation, no areaSize or totalCost
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CalendarBookingScreen(
-          itemSize: areaSize.toInt(),
-          totalCost: totalCost,
+          serviceLabel: 'Water Tank Cleaning', // Passing only serviceLabel
         ),
       ),
     );
@@ -134,18 +126,6 @@ class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
                       labelText: "Tank Size (sqm)",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onChanged: (value) => _calculateCost(),
-                  ),
-                  const SizedBox(height: 30),
-                  Center(
-                    child: Text(
-                      'Total Cost: ₱$totalCost',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.purple[900],
                       ),
                     ),
                   ),

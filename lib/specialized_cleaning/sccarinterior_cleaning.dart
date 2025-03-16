@@ -68,13 +68,12 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
       return;
     }
 
+    String selectedService = 'Car Interior Detailing'; // The service label you want to pass
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CalendarBookingScreen(
-          itemSize: totalItems,
-          totalCost: totalCost,
-        ),
+        builder: (context) => CalendarBookingScreen(serviceLabel: selectedService), // Pass serviceLabel
       ),
     );
   }
@@ -196,7 +195,7 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
                       const SizedBox(height: 20),
                       Center(
                         child: ElevatedButton(
-                          onPressed: _navigateToBooking,
+                          onPressed: _navigateToBooking, // Navigate to booking screen
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.teal,
                             padding: const EdgeInsets.symmetric(

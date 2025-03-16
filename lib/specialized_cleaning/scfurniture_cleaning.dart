@@ -50,7 +50,6 @@ class _ServiceScreenState extends State<ServiceScreen> {
 
   void _navigateToBooking() {
     int totalItems = getTotalItems();
-    int totalCost = getTotalPrice();
 
     if (totalItems == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -62,13 +61,13 @@ class _ServiceScreenState extends State<ServiceScreen> {
       return;
     }
 
+    // Find the selected service label. In this case, you may want to pass a single service
+    String selectedService = 'Furniture Cleaning';  // Adjust as needed for the service you're booking
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CalendarBookingScreen(
-          itemSize: totalItems,
-          totalCost: totalCost,
-        ),
+        builder: (context) => CalendarBookingScreen(serviceLabel: selectedService),
       ),
     );
   }

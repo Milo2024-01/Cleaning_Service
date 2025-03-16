@@ -14,22 +14,7 @@ class _RCCDeclutteringServicePageState
   int hours = 1; // Default value
   final double ratePerHour = 550.0;
 
-  double get totalCost => hours * ratePerHour; // Auto calculate
-
-  void _increaseHours() {
-    setState(() {
-      hours++;
-    });
-  }
-
-  void _decreaseHours() {
-    if (hours > 1) {
-      setState(() {
-        hours--;
-      });
-    }
-  }
-
+  // Function to book now and navigate to booking screen
   void _bookNow() {
     if (hours < 1) {
       _showSnackbar('Please select at least 1 hour.');
@@ -40,13 +25,13 @@ class _RCCDeclutteringServicePageState
       context,
       MaterialPageRoute(
         builder: (context) => CalendarBookingScreen(
-          itemSize: hours, // Pass selected hours
-          totalCost: totalCost.toInt(), // Pass calculated cost
+          serviceLabel: 'Decluttering Services', // Pass the service label
         ),
       ),
     );
   }
 
+  // Function to show a snackbar
   void _showSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -78,6 +63,8 @@ class _RCCDeclutteringServicePageState
         ),
       ),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -127,7 +114,11 @@ class _RCCDeclutteringServicePageState
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
-                            onPressed: _decreaseHours,
+                            onPressed: () {
+                              setState(() {
+                                if (hours > 1) hours--;
+                              });
+                            },
                             icon: const Icon(Icons.remove_circle),
                             color: Colors.deepPurple,
                             iconSize: 40,
@@ -138,23 +129,16 @@ class _RCCDeclutteringServicePageState
                                 fontSize: 22, fontWeight: FontWeight.bold),
                           ),
                           IconButton(
-                            onPressed: _increaseHours,
+                            onPressed: () {
+                              setState(() {
+                                hours++;
+                              });
+                            },
                             icon: const Icon(Icons.add_circle),
                             color: Colors.deepPurple,
                             iconSize: 40,
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 20),
-                      Center(
-                        child: Text(
-                          'Total Cost: ₱${totalCost.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.deepPurple,
-                          ),
-                        ),
                       ),
                       const SizedBox(height: 20),
                       Center(

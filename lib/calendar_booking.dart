@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'payment_upload.dart'; // Import the payment upload screen
 
 class CalendarBookingScreen extends StatefulWidget {
-  final int itemSize;
-  final int totalCost;
+  final String serviceLabel; // Receives service name from clicked icon
 
-  const CalendarBookingScreen({
-    super.key,
-    required this.itemSize,
-    required this.totalCost,
-  });
+  const CalendarBookingScreen({super.key, required this.serviceLabel});
 
   @override
   _CalendarBookingScreenState createState() => _CalendarBookingScreenState();
@@ -28,9 +22,7 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Colors.blueAccent,
-            ),
+            colorScheme: const ColorScheme.light(primary: Colors.blueAccent),
           ),
           child: child!,
         );
@@ -46,176 +38,104 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
 
   void _confirmBooking() {
     if (_selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a time')),
-      );
+      _showSnackbar('Please select a time for your booking.');
       return;
     }
 
     String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
     String formattedTime = _selectedTime!.format(context);
 
-    // Show confirmation message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Booking confirmed for $formattedDate at $formattedTime\n'
-          'Items: ${widget.itemSize}, Total Cost: ₱${widget.totalCost}',
-        ),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+    // Navigate to the confirmation screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BookingConfirmationScreen(
+          serviceLabel: widget.serviceLabel,
+          selectedDate: formattedDate,
+          selectedTime: formattedTime,
         ),
       ),
     );
+  }
 
-    // Navigate to the payment upload screen
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.push(
-        // ignore: use_build_context_synchronously
-        context,
-        MaterialPageRoute(
-          builder: (context) => PaymentUploadScreen(
-            totalCost: widget.totalCost,
-            selectedDate: _selectedDate, // Pass the selected date
-            selectedTime: _selectedTime, // Pass the selected time
-            itemSize: widget.itemSize, // Pass the item size
-          ),
-        ),
-      );
-    });
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Book a Cleaning Service',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+        title: Text(
+          '${widget.serviceLabel} Booking', // Display the clicked service label
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.blueAccent,
-        elevation: 0,
         centerTitle: true,
       ),
       body: SingleChildScrollView(
         child: Container(
-          color: Colors.grey.shade100,
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
+              // Calendar Selection
               Card(
                 elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: TableCalendar(
                     firstDay: DateTime.now(),
                     lastDay: DateTime(2101),
                     focusedDay: _selectedDate,
-                    selectedDayPredicate: (day) =>
-                        isSameDay(_selectedDate, day),
+                    selectedDayPredicate: (day) => isSameDay(_selectedDate, day),
                     onDaySelected: (selectedDay, focusedDay) {
                       setState(() {
                         _selectedDate = selectedDay;
                       });
                     },
                     calendarStyle: CalendarStyle(
-                      selectedDecoration: BoxDecoration(
-                        color: Colors.blueAccent,
-                        shape: BoxShape.circle,
-                      ),
-                      todayDecoration: BoxDecoration(
-                        // ignore: deprecated_member_use
-                        color: Colors.blueAccent.withOpacity(0.3),
-                        shape: BoxShape.circle,
-                      ),
-                      weekendTextStyle: TextStyle(color: Colors.grey.shade700),
-                      defaultTextStyle: TextStyle(color: Colors.grey.shade800),
+                      selectedDecoration: BoxDecoration(color: Colors.blueAccent, shape: BoxShape.circle),
+                      // ignore: deprecated_member_use
+                      todayDecoration: BoxDecoration(color: Colors.blueAccent.withOpacity(0.3), shape: BoxShape.circle),
                     ),
                     headerStyle: HeaderStyle(
                       formatButtonVisible: false,
                       titleCentered: true,
-                      titleTextStyle: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade800,
-                      ),
-                      leftChevronIcon:
-                          Icon(Icons.chevron_left, color: Colors.blueAccent),
-                      rightChevronIcon:
-                          Icon(Icons.chevron_right, color: Colors.blueAccent),
+                      titleTextStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      leftChevronIcon: const Icon(Icons.chevron_left, color: Colors.blueAccent),
+                      rightChevronIcon: const Icon(Icons.chevron_right, color: Colors.blueAccent),
                     ),
                   ),
                 ),
               ),
+
               const SizedBox(height: 20),
+
+              // Time Selection
               Card(
                 elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 child: ListTile(
                   onTap: _pickTime,
-                  leading: Icon(Icons.access_time, color: Colors.blueAccent),
+                  leading: const Icon(Icons.access_time, color: Colors.blueAccent),
                   title: Text(
-                    _selectedTime == null
-                        ? 'Select Time'
-                        : 'Selected: ${_selectedTime!.format(context)}',
-                    style: TextStyle(fontSize: 16, color: Colors.grey.shade800),
+                    _selectedTime == null ? 'Select Time' : 'Selected: ${_selectedTime!.format(context)}',
+                    style: const TextStyle(fontSize: 16),
                   ),
-                  trailing: Icon(Icons.arrow_forward_ios,
-                      color: Colors.grey.shade600),
+                  trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey),
                 ),
               ),
+
               const SizedBox(height: 30),
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text("Total Items:",
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold)),
-                          Text("${widget.itemSize}",
-                              style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blueAccent)),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text("Total Cost:",
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold)),
-                          Text("₱${widget.totalCost}",
-                              style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+
+              // Confirm Booking Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -223,22 +143,64 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueAccent,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 4,
                   ),
-                  child: const Text(
-                    'Confirm Booking',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
-                  ),
+                  child: const Text('Confirm Booking', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// Booking Confirmation Screen
+class BookingConfirmationScreen extends StatelessWidget {
+  final String serviceLabel;
+  final String selectedDate;
+  final String selectedTime;
+
+  const BookingConfirmationScreen({
+    super.key,
+    required this.serviceLabel,
+    required this.selectedDate,
+    required this.selectedTime,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Booking Confirmation'), backgroundColor: Colors.blueAccent),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Service: $serviceLabel', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            Text('Date: $selectedDate', style: const TextStyle(fontSize: 18)),
+            Text('Time: $selectedTime', style: const TextStyle(fontSize: 18)),
+
+            const SizedBox(height: 30),
+
+            // Button to proceed
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.popUntil(context, ModalRoute.withName('/'));
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 30),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Back to Home', style: TextStyle(fontSize: 18, color: Colors.white)),
+              ),
+            ),
+          ],
         ),
       ),
     );

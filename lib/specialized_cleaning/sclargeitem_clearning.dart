@@ -10,18 +10,16 @@ class LargeItemCleaningPage extends StatefulWidget {
 }
 
 class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
-  int itemSize = 3; // Default size in feet
-  final int priceSmall = 1000;
-  final int priceLarge = 2500;
-
-  int get totalCost => itemSize > 5 ? priceLarge : priceSmall;
-
+  // Removed itemSize and totalCost variables
+  
   void _bookService() {
+    // Only passing serviceLabel when navigating
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            CalendarBookingScreen(itemSize: itemSize, totalCost: totalCost),
+        builder: (context) => CalendarBookingScreen(
+          serviceLabel: 'Large Item Cleaning', // Only passing serviceLabel now
+        ),
       ),
     );
   }
@@ -116,53 +114,8 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          Row(
-                            children: [
-                              Icon(Icons.height, color: Colors.amber[800]),
-                              const SizedBox(width: 10),
-                              const Text(
-                                'Size (ft):',
-                                style: TextStyle(fontSize: 18),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Slider(
-                                  value: itemSize.toDouble(),
-                                  min: 3,
-                                  max: 6,
-                                  divisions: 3,
-                                  label: itemSize.toString(),
-                                  activeColor: Colors.amber[700],
-                                  inactiveColor: Colors.amber[100],
-                                  onChanged: (value) {
-                                    setState(() {
-                                      itemSize = value.toInt();
-                                    });
-                                  },
-                                ),
-                              ),
-                              Text(
-                                '$itemSize ft',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.amber[900],
-                                ),
-                              ),
-                            ],
-                          ),
+                          // Removed the Slider widget since itemSize is no longer used
                         ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  Center(
-                    child: Text(
-                      'Total Cost: ₱$totalCost',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber[900],
                       ),
                     ),
                   ),

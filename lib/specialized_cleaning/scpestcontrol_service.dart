@@ -12,15 +12,8 @@ class PestControlPage extends StatefulWidget {
 class _PestControlPageState extends State<PestControlPage> {
   final TextEditingController _areaController = TextEditingController();
   final int pricePerSqm = 65;
-  int totalCost = 0;
 
-  void _calculateCost() {
-    setState(() {
-      double areaSize = double.tryParse(_areaController.text) ?? 0;
-      totalCost = (areaSize * pricePerSqm).toInt();
-    });
-  }
-
+  // Removed totalCost calculation as it's not needed for navigation
   void _bookService() {
     double areaSize = double.tryParse(_areaController.text) ?? 0;
 
@@ -34,12 +27,12 @@ class _PestControlPageState extends State<PestControlPage> {
       return;
     }
 
+    // Only passing serviceLabel for the navigation
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CalendarBookingScreen(
-          itemSize: areaSize.toInt(),
-          totalCost: totalCost,
+          serviceLabel: 'General Pest Control', // Passing only serviceLabel
         ),
       ),
     );
@@ -134,18 +127,6 @@ class _PestControlPageState extends State<PestControlPage> {
                       labelText: "Area Size (sqm)",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onChanged: (value) => _calculateCost(),
-                  ),
-                  const SizedBox(height: 30),
-                  Center(
-                    child: Text(
-                      'Total Cost: ₱$totalCost',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red[900],
                       ),
                     ),
                   ),

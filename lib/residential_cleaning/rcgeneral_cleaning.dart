@@ -46,13 +46,13 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
 
   double get totalCost => ratePerHour * hours * cleaners; // Auto calculation
 
+  // Navigate to CalendarBookingScreen with the required serviceLabel parameter
   void _bookService() {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CalendarBookingScreen(
-          itemSize: cleaners,
-          totalCost: totalCost.toInt(),
+          serviceLabel: 'General Cleaning', // Provide the required parameter
         ),
       ),
     );
@@ -218,7 +218,7 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _bookService,
+                    onPressed: _bookService, // Navigate to booking screen
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.amber[700],
                       padding: const EdgeInsets.symmetric(vertical: 16),

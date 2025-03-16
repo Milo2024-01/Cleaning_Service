@@ -1,45 +1,57 @@
 import 'package:flutter/material.dart';
 import '../calendar_booking.dart'; // Import CalendarBookingScreen
 
-class PostConstructionCleaningCalculator extends StatefulWidget {
-  const PostConstructionCleaningCalculator({super.key});
-
-  @override
-  _PostConstructionCleaningCalculatorState createState() =>
-      _PostConstructionCleaningCalculatorState();
+void main() {
+  runApp(const RCConstructionCleaningApp());
 }
 
-class _PostConstructionCleaningCalculatorState
-    extends State<PostConstructionCleaningCalculator> {
-  double areaSize = 1.0; // Default to 1 sqm
-  final double ratePerSqm = 60.0;
+class RCConstructionCleaningApp extends StatelessWidget {
+  const RCConstructionCleaningApp({super.key});
 
-  double get totalCost => areaSize * ratePerSqm; // Auto calculate
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Construction Cleaning Service',
+      theme: ThemeData(
+        primarySwatch: Colors.green,
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.green[700],
+          elevation: 5,
+          titleTextStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      home: const ConstructionCleaningCalculator(),
+    );
+  }
+}
 
-  void _bookNow() {
-    if (areaSize <= 0) {
-      _showSnackbar('Please enter a valid area size.');
-      return;
-    }
+class ConstructionCleaningCalculator extends StatefulWidget {
+  const ConstructionCleaningCalculator({super.key});
 
+  @override
+  _ConstructionCleaningCalculatorState createState() =>
+      _ConstructionCleaningCalculatorState();
+}
+
+class _ConstructionCleaningCalculatorState extends State<ConstructionCleaningCalculator> {
+  int hours = 1;
+  int cleaners = 1;
+  final double ratePerHour = 450.0;
+
+  double get totalCost => ratePerHour * hours * cleaners;
+
+  void _bookService() {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CalendarBookingScreen(
-          itemSize: areaSize.toInt(),
-          totalCost: totalCost.toInt(),
-        ),
-      ),
-    );
-  }
-
-  void _showSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          serviceLabel: 'Construction Cleaning', // Pass the service label here
         ),
       ),
     );
@@ -49,132 +61,188 @@ class _PostConstructionCleaningCalculatorState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Post Construction Cleaning',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: Colors.green[700], // Dark green for the app bar
-        elevation: 5,
-        centerTitle: true,
+        title: const Text('Construction Cleaning Service'),
       ),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.green.shade700, Colors.green.shade300],
+            colors: [Colors.green.shade700, Colors.green.shade400],
           ),
         ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Card(
-                elevation: 10,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Post Construction Cleaning',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'Using Premium Hydro Vacuum. Removal of excess paint, construction dust, and elimination of unwanted smells.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16, height: 1.5),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Rate: ₱$ratePerSqm per sqm',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Enter the area size (in sqm):',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green[900],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Slider(
-                        value: areaSize,
-                        min: 1.0,
-                        max: 100.0,
-                        divisions: 99,
-                        label: '${areaSize.toStringAsFixed(1)} sqm',
-                        activeColor: Colors.green[700],
-                        inactiveColor: Colors.green[100],
-                        onChanged: (double value) {
-                          setState(() {
-                            areaSize = value;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Total Cost: ₱${totalCost.toStringAsFixed(2)}',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity, // Full width button
-                        child: ElevatedButton(
-                          onPressed: _bookNow,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green[700],
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 16, horizontal: 40),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: const Text(
-                            'Book Now',
-                            style: TextStyle(fontSize: 18, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30), // Space for better UI
-              Center(
-                child: Icon(
-                  Icons.cleaning_services,
-                  size: 100,
-                  // ignore: deprecated_member_use
-                  color: Colors.white.withOpacity(0.3),
-                ),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            // ignore: deprecated_member_use
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 8,
+                spreadRadius: 2,
+                offset: Offset(2, 4),
               ),
             ],
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Card(
+                  elevation: 5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Construction Cleaning',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[900],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'We offer cleaning services for post-construction sites, including debris removal and thorough cleaning.',
+                          style: TextStyle(fontSize: 16, height: 1.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                Text(
+                  'Cleaning Service Cost',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green[900],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Card(
+                  elevation: 5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.timer, color: Colors.green[800]),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Hours:',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Slider(
+                                value: hours.toDouble(),
+                                min: 1,
+                                max: 10,
+                                divisions: 9,
+                                label: hours.toString(),
+                                activeColor: Colors.green[700],
+                                inactiveColor: Colors.green[100],
+                                onChanged: (value) {
+                                  setState(() {
+                                    hours = value.toInt();
+                                  });
+                                },
+                              ),
+                            ),
+                            Text(
+                              '$hours',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green[900],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Icon(Icons.people, color: Colors.green[800]),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Cleaners:',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Slider(
+                                value: cleaners.toDouble(),
+                                min: 1,
+                                max: 10,
+                                divisions: 9,
+                                label: cleaners.toString(),
+                                activeColor: Colors.green[700],
+                                inactiveColor: Colors.green[100],
+                                onChanged: (value) {
+                                  setState(() {
+                                    cleaners = value.toInt();
+                                  });
+                                },
+                              ),
+                            ),
+                            Text(
+                              '$cleaners',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green[900],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                // Total cost display
+                Text(
+                  'Total Cost: ₱${totalCost.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green[900],
+                  ),
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _bookService, // Navigate to booking screen
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green[700],
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: const Text(
+                      'Book Service',
+                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

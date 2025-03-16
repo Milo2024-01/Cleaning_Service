@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../calendar_booking.dart';
+import '../calendar_booking.dart'; // Import CalendarBookingScreen
 
 class GreaseTrapCleaningCalculator extends StatefulWidget {
   const GreaseTrapCleaningCalculator({super.key});
@@ -25,10 +25,7 @@ class _GreaseTrapCleaningCalculatorState
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CalendarBookingScreen(
-          itemSize: numberOfTraps,
-          totalCost: totalCost,
-        ),
+        builder: (context) => const CalendarBookingScreen(serviceLabel: 'Grease Trap Cleaning'), // Pass service label
       ),
     );
   }
@@ -189,7 +186,7 @@ class _GreaseTrapCleaningCalculatorState
               const SizedBox(height: 30),
               Center(
                 child: ElevatedButton(
-                  onPressed: _bookService,
+                  onPressed: _bookService, // Navigate to the booking screen
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red[800],
                     padding: const EdgeInsets.symmetric(

@@ -12,8 +12,7 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
   double areaSize = 1.0; // Default to 1 sqm
   final double ratePerSqm = 55.0; // Cost per square meter for deep cleaning
 
-  double get totalCost => areaSize * ratePerSqm; // Auto calculate total cost
-
+  // Function to book now and navigate to booking screen
   void _bookNow() {
     if (areaSize < 1) {
       _showSnackbar('Please select an area size of at least 1 sqm.');
@@ -23,14 +22,12 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CalendarBookingScreen(
-          itemSize: areaSize.toInt(), // Pass selected area size
-          totalCost: totalCost.toInt(), // Pass calculated cost
-        ),
+        builder: (context) => CalendarBookingScreen(serviceLabel: 'Deep Cleaning'), // Pass the service label
       ),
     );
   }
 
+  // Function to show a snackbar
   void _showSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -150,7 +147,7 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
               // Total Cost Display
               Center(
                 child: Text(
-                  'Total Cost: ₱${totalCost.toStringAsFixed(2)}',
+                  'Total Cost: ₱${(areaSize * ratePerSqm).toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -165,8 +162,7 @@ class _DeepCleaningCalculatorState extends State<DeepCleaningCalculator> {
                 child: ElevatedButton(
                   onPressed: _bookNow, // Navigate to booking screen
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Colors.deepOrange[800], // Dark orange button
+                    backgroundColor: Colors.deepOrange[800], // Dark orange button
                     padding: const EdgeInsets.symmetric(
                         horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(

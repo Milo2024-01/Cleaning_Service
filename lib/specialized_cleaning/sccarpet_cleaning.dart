@@ -47,13 +47,11 @@ class _SCCarpetCleaningPageState extends State<SCCarpetCleaningPage> {
       return;
     }
 
+    // Pass the service label ('Carpet Cleaning') when navigating
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CalendarBookingScreen(
-          itemSize: sqm,
-          totalCost: totalCost.toInt(),
-        ),
+        builder: (context) => CalendarBookingScreen(serviceLabel: 'Carpet Cleaning'),
       ),
     );
   }
