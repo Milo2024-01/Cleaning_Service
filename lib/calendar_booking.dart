@@ -36,16 +36,20 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
     }
   }
 
-  void _confirmBooking() {
-    if (_selectedTime == null) {
-      _showSnackbar('Please select a time for your booking.');
-      return;
-    }
+void _confirmBooking() {
+  if (_selectedTime == null) {
+    _showSnackbar('Please select a time for your booking.');
+    return;
+  }
 
-    String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
-    String formattedTime = _selectedTime!.format(context);
+  String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
+  String formattedTime = _selectedTime!.format(context);
 
-    // Navigate to the confirmation screen
+  if (widget.serviceLabel == 'General Cleaning') {
+    // Navigate back to GeneralCleaningCalculator with the selected date and time
+    Navigator.pop(context, {'date': formattedDate, 'time': formattedTime});
+  } else {
+    // Navigate to the confirmation screen for other services
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -57,6 +61,7 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
       ),
     );
   }
+}
 
   void _showSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(

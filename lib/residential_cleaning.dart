@@ -7,7 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'profile_page.dart';
 import 'home_service.dart';
-import 'calendar_booking.dart'; // Import your CalendarBookingScreen
+import 'calendar_booking.dart';
+import 'residential_cleaning/rcgeneral_cleaning.dart'; // Import your CalendarBookingScreen
 
 class ResidentialCleaningPage extends StatelessWidget {
   ResidentialCleaningPage({super.key});
@@ -104,14 +105,27 @@ class ResidentialCleaningPage extends StatelessWidget {
                     shadowColor: Colors.deepPurple.withOpacity(0.2),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(16),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CalendarBookingScreen(serviceLabel: services[index]['label']),
-                          ),
-                        );
-                      },
+                     onTap: () async {
+                                    final result = await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => CalendarBookingScreen(serviceLabel: services[index]['label']),
+                                      ),
+                                    );
+
+                                    if (result != null && services[index]['label'] == 'General Cleaning') {
+                                      Navigator.push(
+                                        // ignore: use_build_context_synchronously
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => GeneralCleaningCalculator(
+                                            selectedDate: result['date'],
+                                            selectedTime: result['time'],
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(

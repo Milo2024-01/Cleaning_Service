@@ -1,38 +1,16 @@
 import 'package:flutter/material.dart';
 import '../calendar_booking.dart';
-
-void main() {
-  runApp(const RCGeneralCleaningApp());
-}
-
-class RCGeneralCleaningApp extends StatelessWidget {
-  const RCGeneralCleaningApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'General Cleaning Service',
-      theme: ThemeData(
-        primarySwatch: Colors.amber,
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.amber[700],
-          elevation: 5,
-          titleTextStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      home: const GeneralCleaningCalculator(),
-    );
-  }
-}
+//import 'calendar_booking.dart';
 
 class GeneralCleaningCalculator extends StatefulWidget {
-  const GeneralCleaningCalculator({super.key});
+  final String? selectedDate;
+  final String? selectedTime;
+
+  const GeneralCleaningCalculator({
+    super.key,
+    this.selectedDate,
+    this.selectedTime,
+  });
 
   @override
   _GeneralCleaningCalculatorState createState() =>
@@ -47,8 +25,8 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
   double get totalCost => ratePerHour * hours * cleaners; // Auto calculation
 
   // Navigate to CalendarBookingScreen with the required serviceLabel parameter
-  void _bookService() {
-    Navigator.push(
+  void _bookService() async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CalendarBookingScreen(
@@ -56,6 +34,19 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
         ),
       ),
     );
+
+    if (result != null) {
+      Navigator.pushReplacement(
+        // ignore: use_build_context_synchronously
+        context,
+        MaterialPageRoute(
+          builder: (context) => GeneralCleaningCalculator(
+            selectedDate: result['date'],
+            selectedTime: result['time'],
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -232,6 +223,30 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                     ),
                   ),
                 ),
+                if (widget.selectedDate != null && widget.selectedTime != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Selected Date: ${widget.selectedDate}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber[900],
+                          ),
+                        ),
+                        Text(
+                          'Selected Time: ${widget.selectedTime}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber[900],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
