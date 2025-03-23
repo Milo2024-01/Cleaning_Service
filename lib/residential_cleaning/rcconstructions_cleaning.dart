@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
-import '../calendar_booking.dart'; // Import CalendarBookingScreen
+import '../calendar_booking.dart';
+import '../payment_upload.dart';
 
 void main() {
   runApp(const RCConstructionCleaningApp());
 }
 
 class RCConstructionCleaningApp extends StatelessWidget {
-  const RCConstructionCleaningApp({super.key});
+  final String? selectedDate;
+  final String? selectedTime;
+
+  const RCConstructionCleaningApp({
+    super.key,
+    this.selectedDate,
+    this.selectedTime,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,34 +34,110 @@ class RCConstructionCleaningApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const ConstructionCleaningCalculator(),
+      home: ConstructionCleaningCalculator(
+        selectedDate: selectedDate,
+        selectedTime: selectedTime,
+      ),
     );
   }
 }
 
 class ConstructionCleaningCalculator extends StatefulWidget {
-  const ConstructionCleaningCalculator({super.key});
+  final String? selectedDate;
+  final String? selectedTime;
+
+  const ConstructionCleaningCalculator({
+    super.key,
+    this.selectedDate,
+    this.selectedTime,
+  });
 
   @override
   _ConstructionCleaningCalculatorState createState() =>
       _ConstructionCleaningCalculatorState();
 }
 
-class _ConstructionCleaningCalculatorState extends State<ConstructionCleaningCalculator> {
+class _ConstructionCleaningCalculatorState
+    extends State<ConstructionCleaningCalculator> {
   int hours = 1;
   int cleaners = 1;
   final double ratePerHour = 450.0;
 
   double get totalCost => ratePerHour * hours * cleaners;
 
-  void _bookService() {
-    Navigator.push(
+  void _bookService() async {
+    // Navigate to CalendarBookingScreen and wait for the result
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CalendarBookingScreen(
           serviceLabel: 'Construction Cleaning', // Pass the service label here
         ),
       ),
+    );
+
+    // If the result is not null, it means the user confirmed the booking
+    if (result != null) {
+      // Extract the selected date and time from the result
+      final selectedDate = DateTime.parse(result['date']);
+      final selectedTime = TimeOfDay.fromDateTime(
+          DateTime.parse('1970-01-01 ${result['time']}'));
+
+      // Navigate to the PaymentUploadScreen with the selected date and time
+      Navigator.pushReplacement(
+        // ignore: use_build_context_synchronously
+        context,
+        MaterialPageRoute(
+          builder: (context) => PaymentUploadScreen(
+            totalCost: totalCost.toInt(),
+            selectedDate: selectedDate,
+            selectedTime: selectedTime,
+            itemSize: 1, // You can adjust this as needed
+            serviceLabel: 'Construction Cleaning', // Pass the service label
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildSlider({
+    required IconData icon,
+    required String label,
+    required int value,
+    required int min,
+    required int max,
+    required Function(int) onChanged,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.green[800]),
+        const SizedBox(width: 10),
+        Text(
+          '$label:',
+          style: const TextStyle(fontSize: 18),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Slider(
+            value: value.toDouble(),
+            min: min.toDouble(),
+            max: max.toDouble(),
+            divisions: max - min,
+            label: value.toString(),
+            activeColor: Colors.green[700],
+            inactiveColor: Colors.green[100],
+            onChanged: (val) => onChanged(val.toInt()),
+          ),
+        ),
+        Text(
+          '$value',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.green[900],
+          ),
+        ),
+      ],
     );
   }
 
@@ -138,76 +222,30 @@ class _ConstructionCleaningCalculatorState extends State<ConstructionCleaningCal
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        Row(
-                          children: [
-                            Icon(Icons.timer, color: Colors.green[800]),
-                            const SizedBox(width: 10),
-                            const Text(
-                              'Hours:',
-                              style: TextStyle(fontSize: 18),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Slider(
-                                value: hours.toDouble(),
-                                min: 1,
-                                max: 10,
-                                divisions: 9,
-                                label: hours.toString(),
-                                activeColor: Colors.green[700],
-                                inactiveColor: Colors.green[100],
-                                onChanged: (value) {
-                                  setState(() {
-                                    hours = value.toInt();
-                                  });
-                                },
-                              ),
-                            ),
-                            Text(
-                              '$hours',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green[900],
-                              ),
-                            ),
-                          ],
+                        _buildSlider(
+                          icon: Icons.timer,
+                          label: 'Hours',
+                          value: hours,
+                          min: 1,
+                          max: 10,
+                          onChanged: (value) {
+                            setState(() {
+                              hours = value;
+                            });
+                          },
                         ),
                         const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Icon(Icons.people, color: Colors.green[800]),
-                            const SizedBox(width: 10),
-                            const Text(
-                              'Cleaners:',
-                              style: TextStyle(fontSize: 18),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Slider(
-                                value: cleaners.toDouble(),
-                                min: 1,
-                                max: 10,
-                                divisions: 9,
-                                label: cleaners.toString(),
-                                activeColor: Colors.green[700],
-                                inactiveColor: Colors.green[100],
-                                onChanged: (value) {
-                                  setState(() {
-                                    cleaners = value.toInt();
-                                  });
-                                },
-                              ),
-                            ),
-                            Text(
-                              '$cleaners',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green[900],
-                              ),
-                            ),
-                          ],
+                        _buildSlider(
+                          icon: Icons.people,
+                          label: 'Cleaners',
+                          value: cleaners,
+                          min: 1,
+                          max: 10,
+                          onChanged: (value) {
+                            setState(() {
+                              cleaners = value;
+                            });
+                          },
                         ),
                       ],
                     ),
@@ -221,6 +259,34 @@ class _ConstructionCleaningCalculatorState extends State<ConstructionCleaningCal
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.green[900],
+                  ),
+                ),
+                 const SizedBox(height: 30),
+
+              // Selected Date and Time Display
+              if (widget.selectedDate != null && widget.selectedTime != null)
+                Center(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Selected Date: ${widget.selectedDate}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[900],
+                        ),
+                      ),
+                      Text(
+                        'Selected Time: ${widget.selectedTime}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[900],
+                        ),
+                      ),
+                      const SizedBox(height: 20), // Space between time and button
+                    ],
                   ),
                 ),
                 const SizedBox(height: 30),

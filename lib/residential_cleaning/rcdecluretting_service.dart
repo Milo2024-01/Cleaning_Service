@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
-import '../calendar_booking.dart'; // Import the booking screen
+import '../calendar_booking.dart'; // Import CalendarBookingScreen
+import '../payment_upload.dart'; // Import PaymentUploadScreen
 
 class RCCDeclutteringServicePage extends StatefulWidget {
-  const RCCDeclutteringServicePage({super.key});
+  final String? selectedDate;
+  final String? selectedTime;
+
+  const RCCDeclutteringServicePage({
+    super.key,
+    this.selectedDate,
+    this.selectedTime,
+  });
 
   @override
   State<RCCDeclutteringServicePage> createState() =>
@@ -15,13 +23,15 @@ class _RCCDeclutteringServicePageState
   final double ratePerHour = 550.0;
 
   // Function to book now and navigate to booking screen
-  void _bookNow() {
+  void _bookNow() async {
+    
     if (hours < 1) {
       _showSnackbar('Please select at least 1 hour.');
       return;
     }
 
-    Navigator.push(
+    // Navigate to CalendarBookingScreen and wait for the result
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CalendarBookingScreen(
@@ -29,6 +39,29 @@ class _RCCDeclutteringServicePageState
         ),
       ),
     );
+
+    // If the result is not null, it means the user confirmed the booking
+    if (result != null) {
+      // Extract the selected date and time from the result
+      final selectedDate = DateTime.parse(result['date']);
+      final selectedTime = TimeOfDay.fromDateTime(
+          DateTime.parse('1970-01-01 ${result['time']}'));
+
+      // Navigate to the PaymentUploadScreen with the selected date and time
+      Navigator.pushReplacement(
+        // ignore: use_build_context_synchronously
+        context,
+        MaterialPageRoute(
+          builder: (context) => PaymentUploadScreen(
+            totalCost: (ratePerHour * hours).toInt(),
+            selectedDate: selectedDate,
+            selectedTime: selectedTime,
+            itemSize: 1, // You can adjust this as needed
+            serviceLabel: 'Decluttering Services', // Pass the service label
+          ),
+        ),
+      );
+    }
   }
 
   // Function to show a snackbar
@@ -123,10 +156,19 @@ class _RCCDeclutteringServicePageState
                             color: Colors.deepPurple,
                             iconSize: 40,
                           ),
-                          Text(
-                            '$hours hrs',
-                            style: const TextStyle(
-                                fontSize: 22, fontWeight: FontWeight.bold),
+                          Column(
+                            children: [
+                              Text(
+                                '$hours hrs',
+                                style: const TextStyle(
+                                    fontSize: 22, fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                'Total: ₱${(hours * ratePerHour).toInt()}',
+                                style: const TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                            ],
                           ),
                           IconButton(
                             onPressed: () {
@@ -140,6 +182,34 @@ class _RCCDeclutteringServicePageState
                           ),
                         ],
                       ),
+                       const SizedBox(height: 30),
+
+              // Selected Date and Time Display
+              if (widget.selectedDate != null && widget.selectedTime != null)
+                Center(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Selected Date: ${widget.selectedDate}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[900],
+                        ),
+                      ),
+                      Text(
+                        'Selected Time: ${widget.selectedTime}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[900],
+                        ),
+                      ),
+                      const SizedBox(height: 20), // Space between time and button
+                    ],
+                  ),
+                ),
                       const SizedBox(height: 20),
                       Center(
                         child: ElevatedButton(
@@ -158,17 +228,9 @@ class _RCCDeclutteringServicePageState
                           ),
                         ),
                       ),
+                      const SizedBox(height: 30),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Center(
-                child: Icon(
-                  Icons.brush,
-                  size: 100,
-                  // ignore: deprecated_member_use
-                  color: Colors.white.withOpacity(0.3),
                 ),
               ),
             ],

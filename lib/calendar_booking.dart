@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'residential_cleaning/rcdecluretting_service.dart';
+import 'residential_cleaning/rcconstructions_cleaning.dart';
+import 'residential_cleaning/rcdeep_cleaning.dart';
+import 'residential_cleaning/rcgeneral_cleaning.dart';
+import 'residential_cleaning/rcglass_services.dart';
+import 'residential_cleaning/rcgrease_cleaning.dart';
 
 class CalendarBookingScreen extends StatefulWidget {
-  final String serviceLabel; // Receives service name from clicked icon
+  final String serviceLabel;
 
   const CalendarBookingScreen({super.key, required this.serviceLabel});
 
@@ -35,7 +41,6 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
       });
     }
   }
-
 void _confirmBooking() {
   if (_selectedTime == null) {
     _showSnackbar('Please select a time for your booking.');
@@ -45,21 +50,42 @@ void _confirmBooking() {
   String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
   String formattedTime = _selectedTime!.format(context);
 
-  if (widget.serviceLabel == 'General Cleaning') {
-    // Navigate back to GeneralCleaningCalculator with the selected date and time
-    Navigator.pop(context, {'date': formattedDate, 'time': formattedTime});
-  } else {
-    // Navigate to the confirmation screen for other services
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BookingConfirmationScreen(
-          serviceLabel: widget.serviceLabel,
+  final serviceScreens = {
+    'General Cleaning': (context) => GeneralCleaningCalculator(
           selectedDate: formattedDate,
           selectedTime: formattedTime,
         ),
-      ),
+    'Post Construction Cleaning': (context) => RCConstructionCleaningApp(
+          selectedDate: formattedDate,
+          selectedTime: formattedTime,
+        ),
+    'Deep Cleaning': (context) => DeepCleaningCalculator(
+          selectedDate: formattedDate,
+          selectedTime: formattedTime,
+        ),
+    'Grease Trap Cleaning': (context) => GreaseTrapCleaningCalculator(
+          selectedDate: formattedDate,
+          selectedTime: formattedTime,
+        ),
+    'Decluttering Services': (context) => RCCDeclutteringServicePage(
+          selectedDate: formattedDate,
+          selectedTime: formattedTime,
+        ),
+    'Glass Detailing Services': (context) => GlassDetailingCalculator(
+          selectedDate: formattedDate,
+          selectedTime: formattedTime,
+        ),
+  };
+
+  final screenBuilder = serviceScreens[widget.serviceLabel];
+
+  if (screenBuilder != null) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: screenBuilder),
     );
+  } else {
+    Navigator.pop(context, {'date': formattedDate, 'time': formattedTime});
   }
 }
 
@@ -77,19 +103,15 @@ void _confirmBooking() {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          '${widget.serviceLabel} Booking', // Display the clicked service label
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
+        title: Text('${widget.serviceLabel} Booking'),
         backgroundColor: Colors.blueAccent,
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        child: Container(
+        child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              // Calendar Selection
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -113,17 +135,13 @@ void _confirmBooking() {
                     headerStyle: HeaderStyle(
                       formatButtonVisible: false,
                       titleCentered: true,
-                      titleTextStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       leftChevronIcon: const Icon(Icons.chevron_left, color: Colors.blueAccent),
                       rightChevronIcon: const Icon(Icons.chevron_right, color: Colors.blueAccent),
                     ),
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // Time Selection
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -137,10 +155,7 @@ void _confirmBooking() {
                   trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey),
                 ),
               ),
-
               const SizedBox(height: 30),
-
-              // Confirm Booking Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -149,63 +164,12 @@ void _confirmBooking() {
                     backgroundColor: Colors.blueAccent,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 4,
                   ),
-                  child: const Text('Confirm Booking', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  child: const Text('Confirm Booking', style: TextStyle(fontSize: 18, color: Colors.white)),
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// Booking Confirmation Screen
-class BookingConfirmationScreen extends StatelessWidget {
-  final String serviceLabel;
-  final String selectedDate;
-  final String selectedTime;
-
-  const BookingConfirmationScreen({
-    super.key,
-    required this.serviceLabel,
-    required this.selectedDate,
-    required this.selectedTime,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Booking Confirmation'), backgroundColor: Colors.blueAccent),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Service: $serviceLabel', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            Text('Date: $selectedDate', style: const TextStyle(fontSize: 18)),
-            Text('Time: $selectedTime', style: const TextStyle(fontSize: 18)),
-
-            const SizedBox(height: 30),
-
-            // Button to proceed
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.popUntil(context, ModalRoute.withName('/'));
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 30),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Back to Home', style: TextStyle(fontSize: 18, color: Colors.white)),
-              ),
-            ),
-          ],
         ),
       ),
     );

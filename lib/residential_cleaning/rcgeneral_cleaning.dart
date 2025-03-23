@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../calendar_booking.dart';
-//import 'calendar_booking.dart';
+import '../payment_upload.dart'; // Import only the PaymentUploadScreen
 
 class GeneralCleaningCalculator extends StatefulWidget {
   final String? selectedDate;
@@ -24,29 +23,23 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
 
   double get totalCost => ratePerHour * hours * cleaners; // Auto calculation
 
-  // Navigate to CalendarBookingScreen with the required serviceLabel parameter
   void _bookService() async {
-    final result = await Navigator.push(
+    // Use the current date and time as default values
+    final selectedDate = DateTime.now(); // Default to the current date
+    final selectedTime = TimeOfDay.now(); // Default to the current time
+
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => CalendarBookingScreen(
-          serviceLabel: 'General Cleaning', // Provide the required parameter
+        builder: (context) => PaymentUploadScreen(
+          totalCost: totalCost.toInt(),
+          selectedDate: selectedDate,
+          selectedTime: selectedTime,
+          itemSize: 1, // You can adjust this as needed
+          serviceLabel: 'General Cleaning', // Pass the service label
         ),
       ),
     );
-
-    if (result != null) {
-      Navigator.pushReplacement(
-        // ignore: use_build_context_synchronously
-        context,
-        MaterialPageRoute(
-          builder: (context) => GeneralCleaningCalculator(
-            selectedDate: result['date'],
-            selectedTime: result['time'],
-          ),
-        ),
-      );
-    }
   }
 
   @override
@@ -106,6 +99,15 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                         const Text(
                           'We offer routine cleaning services for homes, including dusting, mopping, and sanitizing bathrooms and kitchens.',
                           style: TextStyle(fontSize: 16, height: 1.5),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          '💰 Rate: 350 per hour, per cleaner',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[700],
+                          ),
                         ),
                       ],
                     ),
@@ -201,6 +203,15 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 15),
+                        Text(
+                          'Total Cost: ₱${totalCost.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[700],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -209,7 +220,7 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _bookService, // Navigate to booking screen
+                    onPressed: _bookService,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.amber[700],
                       padding: const EdgeInsets.symmetric(vertical: 16),

@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import '../calendar_booking.dart'; // Import CalendarBookingScreen
+import '../payment_upload.dart'; // Import PaymentUploadScreen
 
 class GreaseTrapCleaningCalculator extends StatefulWidget {
-  const GreaseTrapCleaningCalculator({super.key});
+  final String? selectedDate;
+  final String? selectedTime;
+
+  const GreaseTrapCleaningCalculator({
+    super.key,
+    this.selectedDate,
+    this.selectedTime,
+  });
 
   @override
   _GreaseTrapCleaningCalculatorState createState() =>
@@ -21,13 +29,39 @@ class _GreaseTrapCleaningCalculatorState
     });
   }
 
-  void _bookService() {
-    Navigator.push(
+  void _bookService() async {
+    // Navigate to CalendarBookingScreen and wait for the result
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const CalendarBookingScreen(serviceLabel: 'Grease Trap Cleaning'), // Pass service label
+        builder: (context) => CalendarBookingScreen(
+          serviceLabel: 'Grease Trap Cleaning', // Pass the service label
+        ),
       ),
     );
+
+    // If the result is not null, it means the user confirmed the booking
+    if (result != null) {
+      // Extract the selected date and time from the result
+      final selectedDate = DateTime.parse(result['date']);
+      final selectedTime = TimeOfDay.fromDateTime(
+          DateTime.parse('1970-01-01 ${result['time']}'));
+
+      // Navigate to the PaymentUploadScreen with the selected date and time
+      Navigator.pushReplacement(
+        // ignore: use_build_context_synchronously
+        context,
+        MaterialPageRoute(
+          builder: (context) => PaymentUploadScreen(
+            totalCost: totalCost,
+            selectedDate: selectedDate,
+            selectedTime: selectedTime,
+            itemSize: 1, // You can adjust this as needed
+            serviceLabel: 'Grease Trap Cleaning', // Pass the service label
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -205,6 +239,35 @@ class _GreaseTrapCleaningCalculatorState
                   ),
                 ),
               ),
+              const SizedBox(height: 30),
+
+              // Selected Date and Time Display
+             // Selected Date and Time Display (Centered)
+                  if (widget.selectedDate != null && widget.selectedTime != null)
+                    Center(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Selected Date: ${widget.selectedDate}',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.amber[900],
+                            ),
+                          ),
+                          Text(
+                            'Selected Time: ${widget.selectedTime}',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.amber[900],
+                            ),
+                          ),
+                          const SizedBox(height: 20), // Space between time and button
+                        ],
+                      ),
+                    ),
             ],
           ),
         ),

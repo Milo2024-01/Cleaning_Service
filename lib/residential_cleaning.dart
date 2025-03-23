@@ -125,6 +125,18 @@ class ResidentialCleaningPage extends StatelessWidget {
                                         ),
                                       );
                                     }
+                                    else if (result != null && services[index]['label'] == 'Post Construction Cleaning') {
+                                      Navigator.push(
+                                        // ignore: use_build_context_synchronously
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => GeneralCleaningCalculator(
+                                            selectedDate: result['date'],
+                                            selectedTime: result['time'],
+                                          ),
+                                        ),
+                                      );
+                                    }
                                   },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
