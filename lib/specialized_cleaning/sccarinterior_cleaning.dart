@@ -1,25 +1,16 @@
 import 'package:flutter/material.dart';
+import '../payment_upload.dart';
 import '../specialize_cleaning.dart';
-import '../calendar_booking.dart';
-
-void main() {
-  runApp(const CarDetailingApp());
-}
-
-class CarDetailingApp extends StatelessWidget {
-  const CarDetailingApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: const CarDetailingScreen(),
-    );
-  }
-}
 
 class CarDetailingScreen extends StatefulWidget {
-  const CarDetailingScreen({super.key});
+  final String? selectedDate;
+  final String? selectedTime;
+
+  const CarDetailingScreen({
+    super.key,
+    this.selectedDate,
+    this.selectedTime,
+  });
 
   @override
   State<CarDetailingScreen> createState() => _CarDetailingScreenState();
@@ -34,30 +25,29 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
     {'type': 'Bus (60 Seater)', 'price': 20000, 'quantity': 0},
   ];
 
+  // Define text styles
+  final TextStyle subHeaderStyle = const TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+    color: Colors.teal,
+  );
+
   int get totalCost => services.fold<int>(0, (sum, item) {
-        return sum +
-            ((item['price'] as num).toInt() * (item['quantity'] as int));
+        return sum + ((item['price'] as num).toInt() * (item['quantity'] as int));
       });
 
   int get totalItems => services.fold<int>(0, (sum, item) {
         return sum + (item['quantity'] as int);
       });
 
-  void _increaseQuantity(int index) {
+  void _updateQuantity(int index, int change) {
     setState(() {
-      services[index]['quantity'] = (services[index]['quantity'] as int) + 1;
+      final newQuantity = services[index]['quantity'] + change;
+      services[index]['quantity'] = newQuantity >= 0 ? newQuantity : 0;
     });
   }
 
-  void _decreaseQuantity(int index) {
-    setState(() {
-      if ((services[index]['quantity'] as int) > 0) {
-        services[index]['quantity'] = (services[index]['quantity'] as int) - 1;
-      }
-    });
-  }
-
-  void _navigateToBooking() {
+  void _navigateToPayment() {
     if (totalItems == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -68,12 +58,36 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
       return;
     }
 
-    String selectedService = 'Car Interior Detailing'; // The service label you want to pass
+    // Safe date/time parsing with fallbacks
+    DateTime selectedDate;
+    try {
+      selectedDate = DateTime.parse(widget.selectedDate ?? DateTime.now().toString());
+    } catch (e) {
+      selectedDate = DateTime.now();
+    }
 
+    TimeOfDay selectedTime;
+    try {
+      final timeParts = widget.selectedTime?.split(":") ?? ["12", "00"];
+      selectedTime = TimeOfDay(
+        hour: int.parse(timeParts[0]),
+        minute: int.parse(timeParts[1]),
+      );
+    } catch (e) {
+      selectedTime = const TimeOfDay(hour: 12, minute: 0);
+    }
+
+    // Direct navigation to payment
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CalendarBookingScreen(serviceLabel: selectedService), // Pass serviceLabel
+        builder: (context) => PaymentUploadScreen(
+          totalCost: totalCost,
+          selectedDate: selectedDate,
+          selectedTime: selectedTime,
+          itemSize: totalItems,
+          serviceLabel: 'Car Interior Detailing',
+        ),
       ),
     );
   }
@@ -163,7 +177,7 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
                                   IconButton(
                                     icon: const Icon(Icons.remove_circle,
                                         color: Colors.teal),
-                                    onPressed: () => _decreaseQuantity(index),
+                                    onPressed: () => _updateQuantity(index, -1),
                                   ),
                                   Text(
                                     '${services[index]['quantity']}',
@@ -174,7 +188,7 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
                                   IconButton(
                                     icon: const Icon(Icons.add_circle,
                                         color: Colors.teal),
-                                    onPressed: () => _increaseQuantity(index),
+                                    onPressed: () => _updateQuantity(index, 1),
                                   ),
                                 ],
                               ),
@@ -192,10 +206,29 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
                               color: Colors.teal),
                         ),
                       ),
+                      const SizedBox(height: 30),
+                      if (widget.selectedDate != null || widget.selectedTime != null)
+                        Center(
+                          child: Column(
+                            children: [
+                              if (widget.selectedDate != null)
+                                Text(
+                                  'Selected Date: ${widget.selectedDate}',
+                                  style: subHeaderStyle,
+                                ),
+                              if (widget.selectedTime != null)
+                                Text(
+                                  'Selected Time: ${widget.selectedTime}',
+                                  style: subHeaderStyle,
+                                ),
+                              const SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
                       const SizedBox(height: 20),
                       Center(
                         child: ElevatedButton(
-                          onPressed: _navigateToBooking, // Navigate to booking screen
+                          onPressed: _navigateToPayment,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.teal,
                             padding: const EdgeInsets.symmetric(

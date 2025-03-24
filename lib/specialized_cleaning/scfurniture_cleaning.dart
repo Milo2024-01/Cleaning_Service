@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
+import '../payment_upload.dart';
 import '../specialize_cleaning.dart';
-import '../calendar_booking.dart';
 
-class ServiceScreen extends StatefulWidget {
-  const ServiceScreen({super.key});
+class FurnitureCleaningScreen extends StatefulWidget {
+  final String? selectedDate;
+  final String? selectedTime;
+
+  const FurnitureCleaningScreen({
+    super.key,
+    this.selectedDate,
+    this.selectedTime,
+  });
 
   @override
-  _ServiceScreenState createState() => _ServiceScreenState();
+  State<FurnitureCleaningScreen> createState() => _FurnitureCleaningScreenState();
 }
 
-class _ServiceScreenState extends State<ServiceScreen> {
+class _FurnitureCleaningScreenState extends State<FurnitureCleaningScreen> {
   final Map<String, int> services = {
     'Single Bed': 1000,
     'Twin Bed': 1250,
@@ -41,17 +48,11 @@ class _ServiceScreenState extends State<ServiceScreen> {
   }
 
   int getTotalItems() {
-    int totalItems = 0;
-    quantities.forEach((key, value) {
-      totalItems += value;
-    });
-    return totalItems;
+    return quantities.values.fold(0, (sum, quantity) => sum + quantity);
   }
 
-  void _navigateToBooking() {
-    int totalItems = getTotalItems();
-
-    if (totalItems == 0) {
+  void _navigateToPayment() {
+    if (getTotalItems() == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select at least one service before booking.'),
@@ -61,13 +62,35 @@ class _ServiceScreenState extends State<ServiceScreen> {
       return;
     }
 
-    // Find the selected service label. In this case, you may want to pass a single service
-    String selectedService = 'Furniture Cleaning';  // Adjust as needed for the service you're booking
+    // Parse date/time with fallbacks
+    DateTime selectedDate;
+    try {
+      selectedDate = DateTime.parse(widget.selectedDate ?? DateTime.now().toString());
+    } catch (e) {
+      selectedDate = DateTime.now();
+    }
+
+    TimeOfDay selectedTime;
+    try {
+      final timeParts = widget.selectedTime?.split(":") ?? ["12", "00"];
+      selectedTime = TimeOfDay(
+        hour: int.parse(timeParts[0]),
+        minute: int.parse(timeParts[1]),
+      );
+    } catch (e) {
+      selectedTime = const TimeOfDay(hour: 12, minute: 0);
+    }
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CalendarBookingScreen(serviceLabel: selectedService),
+        builder: (context) => PaymentUploadScreen(
+          totalCost: getTotalPrice(),
+          selectedDate: selectedDate,
+          selectedTime: selectedTime,
+          itemSize: getTotalItems(),
+          serviceLabel: 'Furniture Cleaning',
+        ),
       ),
     );
   }
@@ -227,8 +250,41 @@ class _ServiceScreenState extends State<ServiceScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+              if (widget.selectedDate != null || widget.selectedTime != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          if (widget.selectedDate != null)
+                            Text(
+                              'Selected Date: ${widget.selectedDate}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          if (widget.selectedTime != null)
+                            Text(
+                              'Selected Time: ${widget.selectedTime}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ElevatedButton(
-                onPressed: _navigateToBooking, // Navigate to Calendar Booking
+                onPressed: _navigateToPayment,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueAccent,
                   padding:

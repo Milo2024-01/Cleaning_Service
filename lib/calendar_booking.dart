@@ -7,11 +7,17 @@ import 'residential_cleaning/rcdeep_cleaning.dart';
 import 'residential_cleaning/rcgeneral_cleaning.dart';
 import 'residential_cleaning/rcglass_services.dart';
 import 'residential_cleaning/rcgrease_cleaning.dart';
+import 'specialized_cleaning/sccarinterior_cleaning.dart';
+import 'specialized_cleaning/sccarpet_cleaning.dart';
+import 'specialized_cleaning/scfurniture_cleaning.dart';
+import 'specialized_cleaning/sclargeitem_clearning.dart';
+import 'specialized_cleaning/scpestcontrol_service.dart';
+import 'specialized_cleaning/scwatertank_cleaning.dart';
 
 class CalendarBookingScreen extends StatefulWidget {
   final String serviceLabel;
 
-  const CalendarBookingScreen({super.key, required this.serviceLabel});
+  const CalendarBookingScreen({super.key, required this.serviceLabel, String? initialDate, String? initialTime});
 
   @override
   _CalendarBookingScreenState createState() => _CalendarBookingScreenState();
@@ -76,6 +82,31 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
             selectedDate: formattedDate,
             selectedTime: formattedTime,
           ),
+      'Car Interior Detailing': (context) => CarDetailingScreen(
+            selectedDate: formattedDate,
+            selectedTime: formattedTime,
+          ),         
+      'Carpet Cleaning': (context) => CarpetCleaningScreen(
+            selectedDate: formattedDate,
+            selectedTime: formattedTime,
+          ),      
+      'Furniture Cleaning': (context) => FurnitureCleaningScreen(
+            selectedDate: formattedDate,
+            selectedTime: formattedTime,
+          ),
+      'Large Item Cleaning': (context) => LargeItemCleaningPage(
+            selectedDate: formattedDate,
+            selectedTime: formattedTime,
+          ),   
+      'General Pest Control Services': (context) => PestControlPage(
+            selectedDate: formattedDate,
+            selectedTime: formattedTime,
+          ),   
+      'Water Tank Cleaning': (context) => WaterTankCleaningPage(
+            selectedDate: formattedDate,
+            selectedTime: formattedTime,
+          ),           
+
     };
 
     final screenBuilder = serviceScreens[widget.serviceLabel];

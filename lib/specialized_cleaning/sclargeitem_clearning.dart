@@ -1,24 +1,53 @@
 import 'package:flutter/material.dart';
-import '../calendar_booking.dart';
+import '../payment_upload.dart';
 import '../specialize_cleaning.dart';
 
 class LargeItemCleaningPage extends StatefulWidget {
-  const LargeItemCleaningPage({super.key});
+  final String? selectedDate;
+  final String? selectedTime;
+
+  const LargeItemCleaningPage({
+    super.key,
+    this.selectedDate,
+    this.selectedTime,
+  });
 
   @override
   _LargeItemCleaningPageState createState() => _LargeItemCleaningPageState();
 }
 
 class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
-  // Removed itemSize and totalCost variables
-  
+  static const double fixedPrice = 2000.0; // Fixed price for large item cleaning
+
   void _bookService() {
-    // Only passing serviceLabel when navigating
+    // Parse date/time with fallbacks
+    DateTime selectedDate;
+    try {
+      selectedDate = DateTime.parse(widget.selectedDate ?? DateTime.now().toString());
+    } catch (e) {
+      selectedDate = DateTime.now();
+    }
+
+    TimeOfDay selectedTime;
+    try {
+      final timeParts = widget.selectedTime?.split(":") ?? ["12", "00"];
+      selectedTime = TimeOfDay(
+        hour: int.parse(timeParts[0]),
+        minute: int.parse(timeParts[1]),
+      );
+    } catch (e) {
+      selectedTime = const TimeOfDay(hour: 12, minute: 0);
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CalendarBookingScreen(
-          serviceLabel: 'Large Item Cleaning', // Only passing serviceLabel now
+        builder: (context) => PaymentUploadScreen(
+          totalCost: fixedPrice.toInt(),
+          selectedDate: selectedDate,
+          selectedTime: selectedTime,
+          itemSize: 1, // Since it's a fixed price service
+          serviceLabel: 'Large Item Cleaning',
         ),
       ),
     );
@@ -29,8 +58,9 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Large Item Cleaning'),
+        backgroundColor: Colors.amber[700],
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pushReplacement(
               context,
@@ -40,8 +70,6 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
         ),
       ),
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -49,105 +77,127 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
             colors: [Colors.amber.shade700, Colors.amber.shade400],
           ),
         ),
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                // ignore: deprecated_member_use
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 8,
-                    spreadRadius: 2,
+          child: Column(
+            children: [
+              Card(
+                elevation: 8,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Large Item Cleaning',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[900],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Professional cleaning for large items like life-size stuffed toys, ensuring they remain in pristine condition using specialized equipment and cleaning solutions.',
+                        style: TextStyle(fontSize: 16, height: 1.5),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-              child: Column(
-                children: [
-                  Card(
-                    elevation: 8,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+              const SizedBox(height: 30),
+              Card(
+                elevation: 8,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Fixed Price Service',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[900],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        '₱${fixedPrice.toStringAsFixed(2)} per item',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
+              if (widget.selectedDate != null || widget.selectedTime != null)
+                Card(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        if (widget.selectedDate != null)
                           Text(
-                            'Large Item Cleaning',
+                            'Selected Date: ${widget.selectedDate}',
                             style: TextStyle(
-                              fontSize: 22,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.amber[900],
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'Careful cleaning for large items, ensuring they remain in pristine condition.',
-                            style: TextStyle(fontSize: 16, height: 1.5),
+                        if (widget.selectedTime != null)
+                          Text(
+                            'Selected Time: ${widget.selectedTime}',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.amber[900],
+                            ),
                           ),
-                        ],
-                      ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 30),
-                  Text(
-                    'Life-Size Stuffed Toy Cleaning',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber[900],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Card(
-                    elevation: 8,
+                ),
+              const SizedBox(height: 30),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _bookService,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber[700],
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          // Removed the Slider widget since itemSize is no longer used
-                        ],
-                      ),
+                      borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  const SizedBox(height: 30),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _bookService,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber[700],
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: const Text(
-                        'Book Cleaning',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
-                      ),
-                    ),
+                  child: const Text(
+                    'Book Cleaning',
+                    style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
-                  const SizedBox(height: 40),
-                  Center(
-                    child: Icon(
-                      Icons.clean_hands,
-                      size: 100,
-                      color: Colors.amber[300],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: 40),
+              Center(
+                child: Icon(
+                  Icons.clean_hands,
+                  size: 100,
+                  color: Colors.amber[300],
+                ),
+              ),
+            ],
           ),
         ),
       ),

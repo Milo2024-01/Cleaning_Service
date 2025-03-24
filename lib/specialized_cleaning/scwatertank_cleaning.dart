@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
-import '../specialize_cleaning.dart'; // Import SpecializeCleaningPage
-import '../calendar_booking.dart'; // Import CalendarBookingScreen
+import '../payment_upload.dart';
+import '../specialize_cleaning.dart';
 
 class WaterTankCleaningPage extends StatefulWidget {
-  const WaterTankCleaningPage({super.key});
+  final String? selectedDate;
+  final String? selectedTime;
+
+  const WaterTankCleaningPage({
+    super.key,
+    this.selectedDate,
+    this.selectedTime,
+  });
 
   @override
   _WaterTankCleaningPageState createState() => _WaterTankCleaningPageState();
@@ -11,12 +18,12 @@ class WaterTankCleaningPage extends StatefulWidget {
 
 class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
   final TextEditingController _areaController = TextEditingController();
-  final int pricePerSqm = 80;
+  final double pricePerSqm = 80.0; // ₱80 per sqm
 
   void _bookService() {
-    double areaSize = double.tryParse(_areaController.text) ?? 0;
+    double tankSize = double.tryParse(_areaController.text) ?? 0;
 
-    if (areaSize <= 0) {
+    if (tankSize <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a valid tank size.'),
@@ -26,12 +33,37 @@ class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
       return;
     }
 
-    // Only passing serviceLabel for the navigation, no areaSize or totalCost
+    // Parse date/time with fallbacks
+    DateTime selectedDate;
+    try {
+      selectedDate = DateTime.parse(widget.selectedDate ?? DateTime.now().toString());
+    } catch (e) {
+      selectedDate = DateTime.now();
+    }
+
+    TimeOfDay selectedTime;
+    try {
+      final timeParts = widget.selectedTime?.split(":") ?? ["12", "00"];
+      selectedTime = TimeOfDay(
+        hour: int.parse(timeParts[0]),
+        minute: int.parse(timeParts[1]),
+      );
+    } catch (e) {
+      selectedTime = const TimeOfDay(hour: 12, minute: 0);
+    }
+
+    // Calculate total cost
+    double totalCost = tankSize * pricePerSqm;
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CalendarBookingScreen(
-          serviceLabel: 'Water Tank Cleaning', // Passing only serviceLabel
+        builder: (context) => PaymentUploadScreen(
+          totalCost: totalCost.toInt(),
+          selectedDate: selectedDate,
+          selectedTime: selectedTime,
+          itemSize: tankSize.round(),
+          serviceLabel: 'Water Tank Cleaning',
         ),
       ),
     );
@@ -44,7 +76,7 @@ class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
         title: const Text('Water Tank Cleaning'),
         backgroundColor: Colors.purple[700],
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pushReplacement(
               context,
@@ -54,8 +86,6 @@ class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
         ),
       ),
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -63,101 +93,121 @@ class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
             colors: [Colors.purple.shade700, Colors.purple.shade400],
           ),
         ),
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                // ignore: deprecated_member_use
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 8,
-                    spreadRadius: 2,
+          child: Column(
+            children: [
+              Card(
+                elevation: 8,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Professional Water Tank Cleaning',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purple[900],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Thorough cleaning and disinfection of water storage tanks to ensure safe, clean drinking water. Uses FDA-approved cleaning solutions and equipment.',
+                        style: TextStyle(fontSize: 16, height: 1.5),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-              child: Column(
-                children: [
-                  Card(
-                    elevation: 8,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+              const SizedBox(height: 30),
+              Text(
+                '₱$pricePerSqm per square meter',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purple[900],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: TextField(
+                  controller: _areaController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: "Tank Size (sqm)",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+                    prefixIcon: Icon(Icons.square_foot, color: Colors.purple[700]),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              if (widget.selectedDate != null || widget.selectedTime != null)
+                Card(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        if (widget.selectedDate != null)
                           Text(
-                            'Water Tank Cleaning',
+                            'Selected Date: ${widget.selectedDate}',
                             style: TextStyle(
-                              fontSize: 22,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Colors.purple[900],
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'Professional cleaning and disinfection of water tanks to ensure safe drinking water.',
-                            style: TextStyle(fontSize: 16, height: 1.5),
+                        if (widget.selectedTime != null)
+                          Text(
+                            'Selected Time: ${widget.selectedTime}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.purple[900],
+                            ),
                           ),
-                        ],
-                      ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 30),
-                  Text(
-                    'Enter Tank Size (sqm)',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.purple[900],
+                ),
+              const SizedBox(height: 30),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _bookService,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple[700],
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: _areaController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: "Tank Size (sqm)",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  child: const Text(
+                    'Book Cleaning Service',
+                    style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
-                  const SizedBox(height: 30),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _bookService,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple[700],
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: const Text(
-                        'Book Service',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  Center(
-                    child: Icon(
-                      Icons.water_drop,
-                      size: 100,
-                      color: Colors.purple[300],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: 40),
+              Center(
+                child: Icon(
+                  Icons.water_drop,
+                  size: 100,
+                  color: Colors.purple[300],
+                ),
+              ),
+            ],
           ),
         ),
       ),

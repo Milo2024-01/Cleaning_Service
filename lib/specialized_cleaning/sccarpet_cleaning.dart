@@ -1,32 +1,74 @@
 import 'package:flutter/material.dart';
-import '../calendar_booking.dart'; // Import CalendarBookingScreen
+import '../payment_upload.dart';
 
-class SCCarpetCleaningPage extends StatefulWidget {
-  const SCCarpetCleaningPage({super.key});
+class CarpetCleaningScreen extends StatefulWidget {
+  final String? selectedDate;
+  final String? selectedTime;
+
+  const CarpetCleaningScreen({
+    super.key,
+    this.selectedDate,
+    this.selectedTime,
+  });
 
   @override
-  State<SCCarpetCleaningPage> createState() => _SCCarpetCleaningPageState();
+  State<CarpetCleaningScreen> createState() => _CarpetCleaningScreenState();
 }
 
-class _SCCarpetCleaningPageState extends State<SCCarpetCleaningPage> {
-  int sqm = 1; // Default square meters
-  final double ratePerSqm = 150.0;
-  final int maxSqm = 1000; // Maximum allowed square meters
+class _CarpetCleaningScreenState extends State<CarpetCleaningScreen> {
+  double areaSize = 1.0; // Default to 1 sqm
+  static const double ratePerSqm = 150.0; // ₱150 per sqm
+  final TextEditingController _areaController = TextEditingController();
 
-  double get totalCost => sqm * ratePerSqm; // Auto calculate
-
-  void _increaseSqm() {
-    if (sqm < maxSqm) {
-      setState(() => sqm++);
-    } else {
-      _showSnackbar('Maximum limit reached');
-    }
+  @override
+  void initState() {
+    super.initState();
+    _areaController.text = areaSize.toStringAsFixed(1);
   }
 
-  void _decreaseSqm() {
-    if (sqm > 1) {
-      setState(() => sqm--);
+  @override
+  void dispose() {
+    _areaController.dispose();
+    super.dispose();
+  }
+
+  void _bookNow() {
+    if (areaSize < 1) {
+      _showSnackbar('Please select an area size of at least 1 sqm.');
+      return;
     }
+
+    // Parse date/time with fallbacks
+    DateTime selectedDate;
+    try {
+      selectedDate = DateTime.parse(widget.selectedDate ?? DateTime.now().toString());
+    } catch (e) {
+      selectedDate = DateTime.now();
+    }
+
+    TimeOfDay selectedTime;
+    try {
+      final timeParts = widget.selectedTime?.split(":") ?? ["12", "00"];
+      selectedTime = TimeOfDay(
+        hour: int.parse(timeParts[0]),
+        minute: int.parse(timeParts[1]),
+      );
+    } catch (e) {
+      selectedTime = const TimeOfDay(hour: 12, minute: 0);
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentUploadScreen(
+          totalCost: (areaSize * ratePerSqm).toInt(),
+          selectedDate: selectedDate,
+          selectedTime: selectedTime,
+          itemSize: areaSize.round(),
+          serviceLabel: 'Carpet Cleaning',
+        ),
+      ),
+    );
   }
 
   void _showSnackbar(String message) {
@@ -41,142 +83,118 @@ class _SCCarpetCleaningPageState extends State<SCCarpetCleaningPage> {
     );
   }
 
-  void _bookNow() {
-    if (sqm <= 0) {
-      _showSnackbar('Please select a valid carpet size.');
-      return;
-    }
-
-    // Pass the service label ('Carpet Cleaning') when navigating
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CalendarBookingScreen(serviceLabel: 'Carpet Cleaning'),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Carpet Cleaning',
-          style: TextStyle(
-              fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: Colors.teal,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: const Text('Carpet Cleaning'),
+        backgroundColor: Colors.deepPurple,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.teal.shade800, Colors.teal.shade200],
-          ),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildServiceCard(),
-              const SizedBox(height: 20),
-              Center(
-                child: Icon(
-                  Icons.cleaning_services,
-                  size: 100,
-                  // ignore: deprecated_member_use
-                  color: Colors.white.withOpacity(0.3),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildServiceCard() {
-    return Card(
-      elevation: 10,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Carpet Cleaning Service',
-              style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.teal),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Comprehensive cleaning solutions for carpets and rugs, removing dirt and stains using Premium Hydro Vacuum and eco-friendly biodegradable solutions.',
-              style: TextStyle(fontSize: 16, height: 1.5),
-            ),
-            const SizedBox(height: 20),
             Text(
-              'Rate: ₱$ratePerSqm per sqm',
-              style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.teal),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  onPressed: _decreaseSqm,
-                  icon: const Icon(Icons.remove_circle,
-                      color: Colors.teal, size: 40),
-                ),
-                Text('$sqm sqm',
-                    style: const TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.bold)),
-                IconButton(
-                  onPressed: _increaseSqm,
-                  icon: const Icon(Icons.add_circle,
-                      color: Colors.teal, size: 40),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Center(
-              child: Text(
-                'Total Cost: ₱${totalCost.toStringAsFixed(2)}',
-                style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.teal),
+              'Professional Carpet Cleaning',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple[900],
               ),
             ),
+            const SizedBox(height: 10),
+            const Text(
+              'Comprehensive cleaning solutions for carpets and rugs, removing dirt and stains using Premium Hydro Vacuum and eco-friendly biodegradable solutions.',
+              style: TextStyle(fontSize: 16),
+            ),
             const SizedBox(height: 20),
+
+            // Area Size Input
+            Text(
+              'Enter carpet area size (in sqm):',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple[900],
+              ),
+            ),
+            Slider(
+              value: areaSize,
+              min: 1.0,
+              max: 100.0,
+              divisions: 99,
+              label: '${areaSize.toStringAsFixed(1)} sqm',
+              activeColor: Colors.deepPurple,
+              inactiveColor: Colors.deepPurple[200],
+              onChanged: (double value) {
+                setState(() {
+                  areaSize = value;
+                  _areaController.text = value.toStringAsFixed(1);
+                });
+              },
+            ),
+            const SizedBox(height: 20),
+
+            // Total Cost Display
+            Center(
+              child: Text(
+                'Total Cost: ₱${(areaSize * ratePerSqm).toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
+
+            // Selected Date and Time Display
+            if (widget.selectedDate != null || widget.selectedTime != null)
+              Center(
+                child: Column(
+                  children: [
+                    if (widget.selectedDate != null)
+                      Text(
+                        'Selected Date: ${widget.selectedDate}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[900],
+                        ),
+                      ),
+                    if (widget.selectedTime != null)
+                      Text(
+                        'Selected Time: ${widget.selectedTime}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[900],
+                        ),
+                      ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+
+            // Book Now Button
             Center(
               child: ElevatedButton(
                 onPressed: _bookNow,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
+                  backgroundColor: Colors.deepPurple,
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
                 child: const Text(
-                  'Book Now',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                  'Book Service',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
