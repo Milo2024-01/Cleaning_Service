@@ -41,53 +41,54 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
       });
     }
   }
-void _confirmBooking() {
-  if (_selectedTime == null) {
-    _showSnackbar('Please select a time for your booking.');
-    return;
+
+  void _confirmBooking() {
+    if (_selectedTime == null) {
+      _showSnackbar('Please select a time for your booking.');
+      return;
+    }
+
+    String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    String formattedTime = _selectedTime!.format(context);
+
+    final serviceScreens = {
+      'General Cleaning': (context) => GeneralCleaningCalculator(
+            selectedDate: formattedDate,
+            selectedTime: formattedTime,
+          ),
+      'Post Construction Cleaning': (context) => ConstructionCleaningCalculator(
+            selectedDate: formattedDate,
+            selectedTime: formattedTime,
+          ),
+      'Deep Cleaning': (context) => DeepCleaningCalculator(
+            selectedDate: formattedDate,
+            selectedTime: formattedTime,
+          ),
+      'Grease Trap Cleaning': (context) => GreaseTrapCleaningCalculator(
+            selectedDate: formattedDate,
+            selectedTime: formattedTime,
+          ),
+      'Decluttering Services': (context) => RCCDeclutteringServicePage(
+            selectedDate: formattedDate,
+            selectedTime: formattedTime,
+          ),
+      'Glass Detailing Services': (context) => GlassDetailingCalculator(
+            selectedDate: formattedDate,
+            selectedTime: formattedTime,
+          ),
+    };
+
+    final screenBuilder = serviceScreens[widget.serviceLabel];
+
+    if (screenBuilder != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: screenBuilder),
+      );
+    } else {
+      Navigator.pop(context, {'date': formattedDate, 'time': formattedTime});
+    }
   }
-
-  String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
-  String formattedTime = _selectedTime!.format(context);
-
-  final serviceScreens = {
-    'General Cleaning': (context) => GeneralCleaningCalculator(
-          selectedDate: formattedDate,
-          selectedTime: formattedTime,
-        ),
-    'Post Construction Cleaning': (context) => RCConstructionCleaningApp(
-          selectedDate: formattedDate,
-          selectedTime: formattedTime,
-        ),
-    'Deep Cleaning': (context) => DeepCleaningCalculator(
-          selectedDate: formattedDate,
-          selectedTime: formattedTime,
-        ),
-    'Grease Trap Cleaning': (context) => GreaseTrapCleaningCalculator(
-          selectedDate: formattedDate,
-          selectedTime: formattedTime,
-        ),
-    'Decluttering Services': (context) => RCCDeclutteringServicePage(
-          selectedDate: formattedDate,
-          selectedTime: formattedTime,
-        ),
-    'Glass Detailing Services': (context) => GlassDetailingCalculator(
-          selectedDate: formattedDate,
-          selectedTime: formattedTime,
-        ),
-  };
-
-  final screenBuilder = serviceScreens[widget.serviceLabel];
-
-  if (screenBuilder != null) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: screenBuilder),
-    );
-  } else {
-    Navigator.pop(context, {'date': formattedDate, 'time': formattedTime});
-  }
-}
 
   void _showSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(

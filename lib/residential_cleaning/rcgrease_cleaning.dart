@@ -29,40 +29,49 @@ class _GreaseTrapCleaningCalculatorState
     });
   }
 
-  void _bookService() async {
-    // Navigate to CalendarBookingScreen and wait for the result
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CalendarBookingScreen(
-          serviceLabel: 'Grease Trap Cleaning', // Pass the service label
-        ),
-      ),
-    );
-
-    // If the result is not null, it means the user confirmed the booking
-    if (result != null) {
-      // Extract the selected date and time from the result
-      final selectedDate = DateTime.parse(result['date']);
-      final selectedTime = TimeOfDay.fromDateTime(
-          DateTime.parse('1970-01-01 ${result['time']}'));
-
-      // Navigate to the PaymentUploadScreen with the selected date and time
-      Navigator.pushReplacement(
-        // ignore: use_build_context_synchronously
-        context,
-        MaterialPageRoute(
-          builder: (context) => PaymentUploadScreen(
-            totalCost: totalCost,
-            selectedDate: selectedDate,
-            selectedTime: selectedTime,
-            itemSize: 1, // You can adjust this as needed
-            serviceLabel: 'Grease Trap Cleaning', // Pass the service label
-          ),
-        ),
-      );
-    }
+ void _bookService() {
+  // Ensure selectedDate is not null and is in a valid format
+  DateTime selectedDate;
+  try {
+    selectedDate = widget.selectedDate != null
+        ? DateTime.parse(widget.selectedDate!)
+        : DateTime.now();
+  } catch (e) {
+    selectedDate = DateTime.now(); // Fallback to current date in case of error
   }
+
+  // Ensure selectedTime is not null and is in a valid format
+  TimeOfDay selectedTime;
+  try {
+    if (widget.selectedTime != null) {
+      final timeParts = widget.selectedTime!.split(":");
+      selectedTime = TimeOfDay(
+        hour: int.parse(timeParts[0]),
+        minute: int.parse(timeParts[1]),
+      );
+    } else {
+      selectedTime = const TimeOfDay(hour: 12, minute: 0); // Default to 12:00 PM
+    }
+  } catch (e) {
+    selectedTime = const TimeOfDay(hour: 12, minute: 0); // Fallback in case of error
+  }
+
+  // Navigate to PaymentUploadScreen
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => PaymentUploadScreen(
+        totalCost: totalCost,
+        selectedDate: selectedDate,
+        selectedTime: selectedTime,
+        itemSize: numberOfTraps,
+        serviceLabel: 'Grease Trap Cleaning',
+      ),
+    ),
+  );
+}
+
+
 
   @override
   Widget build(BuildContext context) {

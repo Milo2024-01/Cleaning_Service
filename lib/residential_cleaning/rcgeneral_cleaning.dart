@@ -24,23 +24,42 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
   double get totalCost => ratePerHour * hours * cleaners; // Auto calculation
 
   void _bookService() async {
-    // Use the current date and time as default values
-    final selectedDate = DateTime.now(); // Default to the current date
-    final selectedTime = TimeOfDay.now(); // Default to the current time
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PaymentUploadScreen(
-          totalCost: totalCost.toInt(),
-          selectedDate: selectedDate,
-          selectedTime: selectedTime,
-          itemSize: 1, // You can adjust this as needed
-          serviceLabel: 'General Cleaning', // Pass the service label
-        ),
+  // Check if selectedDate and selectedTime are provided
+  if (widget.selectedDate == null || widget.selectedTime == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please select a date and time before booking.'),
+        behavior: SnackBarBehavior.floating,
       ),
     );
+    return;
   }
+
+  // Convert selectedDate (String) to DateTime
+  DateTime selectedDate = DateTime.parse(widget.selectedDate!);
+
+  // Convert selectedTime (String) to TimeOfDay
+  List<String> timeParts = widget.selectedTime!.split(":");
+  TimeOfDay selectedTime = TimeOfDay(
+    hour: int.parse(timeParts[0]),
+    minute: int.parse(timeParts[1]),
+  );
+
+  // Navigate to the payment screen with correct values
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (context) => PaymentUploadScreen(
+        totalCost: totalCost.toInt(),
+        selectedDate: selectedDate,
+        selectedTime: selectedTime,
+        itemSize: 1, // You can adjust this as needed
+        serviceLabel: 'General Cleaning', // Pass the service label
+      ),
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {

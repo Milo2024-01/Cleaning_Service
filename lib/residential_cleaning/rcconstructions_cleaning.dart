@@ -1,46 +1,5 @@
 import 'package:flutter/material.dart';
-import '../calendar_booking.dart';
 import '../payment_upload.dart';
-
-void main() {
-  runApp(const RCConstructionCleaningApp());
-}
-
-class RCConstructionCleaningApp extends StatelessWidget {
-  final String? selectedDate;
-  final String? selectedTime;
-
-  const RCConstructionCleaningApp({
-    super.key,
-    this.selectedDate,
-    this.selectedTime,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Construction Cleaning Service',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.green[700],
-          elevation: 5,
-          titleTextStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      home: ConstructionCleaningCalculator(
-        selectedDate: selectedDate,
-        selectedTime: selectedTime,
-      ),
-    );
-  }
-}
 
 class ConstructionCleaningCalculator extends StatefulWidget {
   final String? selectedDate;
@@ -53,263 +12,222 @@ class ConstructionCleaningCalculator extends StatefulWidget {
   });
 
   @override
-  _ConstructionCleaningCalculatorState createState() =>
+  _ConstructionCleaningCalculatorState createState() => 
       _ConstructionCleaningCalculatorState();
 }
 
-class _ConstructionCleaningCalculatorState
+class _ConstructionCleaningCalculatorState 
     extends State<ConstructionCleaningCalculator> {
-  int hours = 1;
-  int cleaners = 1;
-  final double ratePerHour = 450.0;
+  double areaSize = 1.0; // Default to 1 sqm
+  static const double ratePerSqm = 60.0; // Cost per sqm (compile-time constant)
+  final TextEditingController _areaController = TextEditingController();
 
-  double get totalCost => ratePerHour * hours * cleaners;
+  @override
+  void initState() {
+    super.initState();
+    _areaController.text = areaSize.toStringAsFixed(1);
+  }
 
-  void _bookService() async {
-    // Navigate to CalendarBookingScreen and wait for the result
-    final result = await Navigator.push(
+  @override
+  void dispose() {
+    _areaController.dispose();
+    super.dispose();
+  }
+
+  void _bookNow() {
+    if (areaSize < 1) {
+      _showSnackbar('Please select an area size of at least 1 sqm.');
+      return;
+    }
+
+    // Safe date/time parsing with fallbacks
+    DateTime selectedDate;
+    try {
+      selectedDate = DateTime.parse(widget.selectedDate ?? DateTime.now().toString());
+    } catch (e) {
+      selectedDate = DateTime.now();
+    }
+
+    TimeOfDay selectedTime;
+    try {
+      final timeParts = widget.selectedTime?.split(":") ?? ["12", "00"];
+      selectedTime = TimeOfDay(
+        hour: int.parse(timeParts[0]),
+        minute: int.parse(timeParts[1]),
+      );
+    } catch (e) {
+      selectedTime = const TimeOfDay(hour: 12, minute: 0); // Default to noon
+    }
+
+    Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CalendarBookingScreen(
-          serviceLabel: 'Construction Cleaning', // Pass the service label here
+        builder: (context) => PaymentUploadScreen(
+          totalCost: (areaSize * ratePerSqm).toInt(),
+          selectedDate: selectedDate,
+          selectedTime: selectedTime,
+          itemSize: 1,
+          serviceLabel: 'Construction Cleaning',
         ),
       ),
     );
-
-    // If the result is not null, it means the user confirmed the booking
-    if (result != null) {
-      // Extract the selected date and time from the result
-      final selectedDate = DateTime.parse(result['date']);
-      final selectedTime = TimeOfDay.fromDateTime(
-          DateTime.parse('1970-01-01 ${result['time']}'));
-
-      // Navigate to the PaymentUploadScreen with the selected date and time
-      Navigator.pushReplacement(
-        // ignore: use_build_context_synchronously
-        context,
-        MaterialPageRoute(
-          builder: (context) => PaymentUploadScreen(
-            totalCost: totalCost.toInt(),
-            selectedDate: selectedDate,
-            selectedTime: selectedTime,
-            itemSize: 1, // You can adjust this as needed
-            serviceLabel: 'Construction Cleaning', // Pass the service label
-          ),
-        ),
-      );
-    }
   }
 
-  Widget _buildSlider({
-    required IconData icon,
-    required String label,
-    required int value,
-    required int min,
-    required int max,
-    required Function(int) onChanged,
-  }) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.green[800]),
-        const SizedBox(width: 10),
-        Text(
-          '$label:',
-          style: const TextStyle(fontSize: 18),
+  void _showSnackbar(String message, {Duration duration = const Duration(seconds: 3)}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: duration,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Slider(
-            value: value.toDouble(),
-            min: min.toDouble(),
-            max: max.toDouble(),
-            divisions: max - min,
-            label: value.toString(),
-            activeColor: Colors.green[700],
-            inactiveColor: Colors.green[100],
-            onChanged: (val) => onChanged(val.toInt()),
-          ),
-        ),
-        Text(
-          '$value',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.green[900],
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    // Reusable text styles
+    final TextStyle headerStyle = TextStyle(
+      fontSize: 22,
+      fontWeight: FontWeight.bold,
+      color: Colors.green[900],
+    );
+
+    final TextStyle subHeaderStyle = TextStyle(
+      fontSize: 20,
+      fontWeight: FontWeight.bold,
+      color: Colors.green[900],
+    );
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Construction Cleaning Service'),
+        title: const Text('Construction Cleaning'),
+        backgroundColor: Colors.green[700],
       ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.green.shade700, Colors.green.shade400],
-          ),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            // ignore: deprecated_member_use
-            color: Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 8,
-                spreadRadius: 2,
-                offset: Offset(2, 4),
-              ),
-            ],
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                Card(
-                  elevation: 5,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Construction Cleaning',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green[900],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'We offer cleaning services for post-construction sites, including debris removal and thorough cleaning.',
-                          style: TextStyle(fontSize: 16, height: 1.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Text(
-                  'Cleaning Service Cost',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green[900],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Card(
-                  elevation: 5,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        _buildSlider(
-                          icon: Icons.timer,
-                          label: 'Hours',
-                          value: hours,
-                          min: 1,
-                          max: 10,
-                          onChanged: (value) {
-                            setState(() {
-                              hours = value;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 10),
-                        _buildSlider(
-                          icon: Icons.people,
-                          label: 'Cleaners',
-                          value: cleaners,
-                          min: 1,
-                          max: 10,
-                          onChanged: (value) {
-                            setState(() {
-                              cleaners = value;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 30),
-                // Total cost display
-                Text(
-                  'Total Cost: ₱${totalCost.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green[900],
-                  ),
-                ),
-                 const SizedBox(height: 30),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Post-Construction Cleaning',
+              style: headerStyle,
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Removes excess paint, dust, and construction debris using premium hydro vacuum.',
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 20),
 
-              // Selected Date and Time Display
-              if (widget.selectedDate != null && widget.selectedTime != null)
-                Center(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Selected Date: ${widget.selectedDate}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.amber[900],
-                        ),
-                      ),
-                      Text(
-                        'Selected Time: ${widget.selectedTime}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.amber[900],
-                        ),
-                      ),
-                      const SizedBox(height: 20), // Space between time and button
-                    ],
+            // Area Size Input (Slider + TextField)
+            Text(
+              'Enter the area size (in sqm):',
+              style: subHeaderStyle,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Slider(
+                    value: areaSize,
+                    min: 1.0,
+                    max: 100.0,
+                    divisions: 99,
+                    label: '${areaSize.toStringAsFixed(1)} sqm',
+                    activeColor: Colors.green[700],
+                    inactiveColor: Colors.green[200],
+                    onChanged: (double value) {
+                      setState(() {
+                        areaSize = value;
+                        _areaController.text = value.toStringAsFixed(1);
+                      });
+                    },
                   ),
                 ),
-                const SizedBox(height: 30),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _bookService, // Navigate to booking screen
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[700],
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 1,
+                  child: TextField(
+                    controller: _areaController,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
-                    child: const Text(
-                      'Book Service',
-                      style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
+                    onChanged: (value) {
+                      final newValue = double.tryParse(value) ?? 1.0;
+                      setState(() {
+                        areaSize = newValue.clamp(1.0, 100.0);
+                      });
+                    },
                   ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 20),
+
+            // Total Cost Display
+            Center(
+              child: Text(
+                'Total Cost: ₱${(areaSize * ratePerSqm).toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
+
+            // Selected Date and Time Display
+            if (widget.selectedDate != null || widget.selectedTime != null)
+              Center(
+                child: Column(
+                  children: [
+                    if (widget.selectedDate != null)
+                      Text(
+                        'Selected Date: ${widget.selectedDate}',
+                        style: subHeaderStyle,
+                      ),
+                    if (widget.selectedTime != null)
+                      Text(
+                        'Selected Time: ${widget.selectedTime}',
+                        style: subHeaderStyle,
+                      ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+
+            // Book Now Button
+            Center(
+              child: ElevatedButton(
+                onPressed: _bookNow,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[700],
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: const Text(
+                  'Book Service',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
