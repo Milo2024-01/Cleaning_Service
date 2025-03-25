@@ -2,13 +2,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'profile_page.dart'; // Import ProfilePage
-import 'main.dart'; // Import MyApp from main.dart
-import 'residential_cleaning.dart'; // Import ResidentialCleaningPage
-import 'specialize_cleaning.dart'; // Import SpecializeCleaningPage
+import 'profile_page.dart';
+import 'main.dart';
+import 'residential_cleaning.dart';
+import 'specialize_cleaning.dart';
+import 'my_calendar_booking.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 final List<Map<String, dynamic>> categories = [
@@ -16,7 +17,7 @@ final List<Map<String, dynamic>> categories = [
     'icon': Icons.home,
     'label': 'Residential Cleaning',
     'color': Colors.blueAccent,
-  }, // This is the category for Residential Cleaning
+  },
   {
     'icon': Icons.cleaning_services,
     'label': 'Special Cleaning Service',
@@ -33,107 +34,96 @@ class HomeServicePage extends StatefulWidget {
 
 class _HomeServicePageState extends State<HomeServicePage> {
   final List<String> imagePaths = [
-    'assets/images/csimg1.png', // Local Image 1
-    'assets/images/csimg2.png', // Local Image 2
-    'assets/images/csimg3.png', // Local Image 3
-    'assets/images/csimg4.png', // Local Image 4
+    'assets/images/csimg1.png',
+    'assets/images/csimg2.png',
+    'assets/images/csimg3.png',
+    'assets/images/csimg4.png',
   ];
   late PageController _pageController;
   int _currentIndex = 0;
-
-  // Set up bottom navigation
   int _selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    Future.delayed(const Duration(seconds: 3), _autoSlide);
+  }
 
-    // Set the interval for automatic sliding
-    Future.delayed(Duration(seconds: 3), _autoSlide);
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   void _autoSlide() {
-    if (_currentIndex < imagePaths.length - 1) {
-      _pageController.animateToPage(
-        _currentIndex + 1,
-        duration: Duration(seconds: 1),
-        curve: Curves.easeInOut,
-      );
-      _currentIndex++;
-    } else {
-      _pageController.animateToPage(
-        0,
-        duration: Duration(seconds: 1),
-        curve: Curves.easeInOut,
-      );
-      _currentIndex = 0;
-    }
-    // Call _autoSlide again to keep sliding
-    Future.delayed(Duration(seconds: 3), _autoSlide);
+    if (!mounted) return;
+    setState(() {
+      _currentIndex = (_currentIndex + 1) % imagePaths.length;
+    });
+
+    _pageController.animateToPage(
+      _currentIndex,
+      duration: const Duration(seconds: 1),
+      curve: Curves.easeInOut,
+    );
+
+    Future.delayed(const Duration(seconds: 3), _autoSlide);
   }
 
-  // Function to handle navigation based on the selected index
   void _onItemTapped(int index) {
+    if (!mounted) return;
     setState(() {
       _selectedIndex = index;
     });
 
     switch (_selectedIndex) {
       case 0:
-        // When "Home" button is tapped, stay on HomeServicePage
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-              builder: (context) =>
-                  HomeServicePage()), // Stay on the HomeServicePage
+          MaterialPageRoute(builder: (context) => const HomeServicePage()),
         );
         break;
       case 1:
-        // Handle calendar navigation (You can create a calendar screen here)
-        if (kDebugMode) {
-          print('Calendar tapped');
-        }
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const BookingCalendar()),
+        );
         break;
       case 2:
         Navigator.push(
           context,
-          MaterialPageRoute(
-              builder: (context) => ProfilePage()), // ProfilePage navigation
+          MaterialPageRoute(builder: (context) => const ProfilePage()),
         );
         break;
       case 3:
-        _logout(); // Handle Logout
+        _logout();
         break;
     }
   }
 
-  // Function to handle user logout
   Future<void> _logout() async {
     try {
-      await FirebaseAuth.instance.signOut(); // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
+      if (!mounted) return;
       Navigator.pushReplacement(
-        // ignore: use_build_context_synchronously
         context,
-        MaterialPageRoute(
-            builder: (context) => MyApp()), // Navigate to MyApp (Main Screen)
+        MaterialPageRoute(builder: (context) => const MyApp()),
       );
     } catch (e) {
       if (kDebugMode) {
-        print(
-            "Error logging out: $e"); // Log any errors that happen during logout
+        print("Error logging out: $e");
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get the current logged-in user
     User? user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Cleeners Clean Service',
           style: TextStyle(
             fontSize: 22,
@@ -141,113 +131,100 @@ class _HomeServicePageState extends State<HomeServicePage> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.blueAccent, // Modern blue accent color
-        elevation: 5, // Shadow for the app bar
-        centerTitle: true, // Center the title
+        backgroundColor: Colors.blueAccent,
+        elevation: 5,
+        centerTitle: true,
         actions: [
-          // User profile icon in the top right corner
-          user != null
-              ? Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: FutureBuilder<DocumentSnapshot>(
-                    future: FirebaseFirestore.instance
-                        .collection(
-                            'users') // Assuming the collection is 'users'
-                        .doc(user.uid) // Get the user document by their UID
-                        .get(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return CircularProgressIndicator(); // Show loading spinner while fetching
-                      }
-                      if (snapshot.hasError) {
-                        return Icon(Icons
-                            .error); // If error fetching data, show error icon
-                      }
+          if (user != null)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user.uid)
+                    .get(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  }
+                  if (snapshot.hasError) {
+                    return const Icon(Icons.error, color: Colors.white);
+                  }
 
-                      String firstName =
-                          snapshot.data?.get('first_name') ?? "Guest";
+                  String firstName = snapshot.data?.get('first_name') ?? "Guest";
 
-                      return Row(
-                        children: [
-                          Text(
-                            firstName, // Display the fetched first_name
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                  return Row(
+                    children: [
+                      Text(
+                        firstName,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const ProfilePage()),
+                          );
+                        },
+                        child: CircleAvatar(
+                          backgroundImage: NetworkImage(
+                            user.photoURL ??
+                                "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
                           ),
-                          SizedBox(width: 10),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => ProfilePage()),
-                              );
-                            },
-                            child: CircleAvatar(
-                              backgroundImage: NetworkImage(
-                                user.photoURL ??
-                                    "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                )
-              : Container(), // If no user is logged in, no avatar will be shown
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Slideshow of images
             SizedBox(
-              height: 200, // Fixed height of the container
-              width: 400, // Fixed width for the container
+              height: 200,
+              width: 400,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(15), // Rounded corners
+                borderRadius: BorderRadius.circular(15),
                 child: PageView.builder(
                   controller: _pageController,
                   itemCount: imagePaths.length,
                   itemBuilder: (context, index) {
-                    return SizedBox(
-                      width: 400, // Fixed width for the container
-                      height: 200, // Fixed height for the container
-                      child: Image.asset(
-                        imagePaths[index], // Load images from the assets
-                        fit: BoxFit.cover, // Ensures images fit the container
-                      ),
+                    return Image.asset(
+                      imagePaths[index],
+                      fit: BoxFit.cover,
                     );
                   },
                 ),
               ),
             ),
-            SizedBox(height: 20),
-            // Search Box
+            const SizedBox(height: 20),
             TextField(
               decoration: InputDecoration(
                 hintText: 'Search',
-                prefixIcon: Icon(Icons.search, color: Colors.blueAccent),
+                prefixIcon: const Icon(Icons.search, color: Colors.blueAccent),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
                 fillColor: Colors.grey[200],
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Expanded(
               child: GridView.builder(
                 itemCount: categories.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
@@ -256,18 +233,15 @@ class _HomeServicePageState extends State<HomeServicePage> {
                 itemBuilder: (context, index) {
                   return GestureDetector(
                     onTap: () {
-                      if (categories[index]['label'] ==
-                          'Residential Cleaning') {
-                        // Navigate to the Residential Cleaning page
+                      if (categories[index]['label'] == 'Residential Cleaning') {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ResidentialCleaningPage(),
+                            builder: (context) => const ResidentialCleaningPage(),
                           ),
                         );
                       } else if (categories[index]['label'] ==
                           'Special Cleaning Service') {
-                        // Navigate to the Special Cleaning Service page
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -277,63 +251,36 @@ class _HomeServicePageState extends State<HomeServicePage> {
                       }
                     },
                     child: CategoryCard(
-                      icon: categories[index]['icon'] as IconData,
-                      label: categories[index]['label'] as String,
-                      color: categories[index]['color'] as Color,
+                      icon: categories[index]['icon'],
+                      label: categories[index]['label'],
+                      color: categories[index]['color'],
                     ),
                   );
                 },
               ),
             ),
-            SizedBox(height: 10),
-            TextButton(
-              onPressed: () {},
-              child: Text(
-                'See All',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.blueAccent,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
           ],
         ),
       ),
-      // Bottom navigation bar
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Calendar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_circle),
-            label: 'Profile',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.logout),
-            label: 'Logout',
-          ),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Calendar'),
+          BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
+          BottomNavigationBarItem(icon: Icon(Icons.logout), label: 'Logout'),
         ],
-        backgroundColor: Colors.white,
         selectedItemColor: Colors.blueAccent,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
         type: BottomNavigationBarType.fixed,
-        elevation: 10,
       ),
     );
   }
 }
 
-// Category Card widget
+// ✅ CategoryCard Widget (Previously Missing)
 class CategoryCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -348,40 +295,19 @@ class CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+    return Container(
+      decoration: BoxDecoration(
+        // ignore: deprecated_member_use
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(10),
       ),
-      elevation: 5,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            // ignore: deprecated_member_use
-            colors: [color.withOpacity(0.8), color],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 50, color: Colors.white),
-              SizedBox(height: 10),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 50, color: color),
+          const SizedBox(height: 10),
+          Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+        ],
       ),
     );
   }

@@ -1,18 +1,19 @@
-// ignore_for_file: deprecated_member_use
-
-import 'package:flutter/foundation.dart';
+//import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'profile_page.dart';
-import 'home_service.dart';
 import 'calendar_booking.dart';
-import 'residential_cleaning/rcgeneral_cleaning.dart'; // Import your CalendarBookingScreen
+import 'residential_cleaning/rcgeneral_cleaning.dart';
 
-class ResidentialCleaningPage extends StatelessWidget {
-  ResidentialCleaningPage({super.key});
+class ResidentialCleaningPage extends StatefulWidget {
+  const ResidentialCleaningPage({super.key});
 
+  @override
+  _ResidentialCleaningPageState createState() => _ResidentialCleaningPageState();
+}
+
+class _ResidentialCleaningPageState extends State<ResidentialCleaningPage> {
   final List<Map<String, dynamic>> services = [
     {'label': 'General Cleaning', 'icon': Icons.cleaning_services, 'color': Colors.blue.shade700},
     {'label': 'Post Construction Cleaning', 'icon': Icons.build, 'color': Colors.green.shade700},
@@ -102,42 +103,45 @@ class ResidentialCleaningPage extends StatelessWidget {
                   return Card(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 4,
+                    // ignore: deprecated_member_use
                     shadowColor: Colors.deepPurple.withOpacity(0.2),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(16),
-                     onTap: () async {
-                                    final result = await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => CalendarBookingScreen(serviceLabel: services[index]['label']),
-                                      ),
-                                    );
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CalendarBookingScreen(serviceLabel: services[index]['label']),
+                          ),
+                        );
 
-                                    if (result != null && services[index]['label'] == 'General Cleaning') {
-                                      Navigator.push(
-                                        // ignore: use_build_context_synchronously
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => GeneralCleaningCalculator(
-                                            selectedDate: result['date'],
-                                            selectedTime: result['time'],
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                    else if (result != null && services[index]['label'] == 'Post Construction Cleaning') {
-                                      Navigator.push(
-                                        // ignore: use_build_context_synchronously
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => GeneralCleaningCalculator(
-                                            selectedDate: result['date'],
-                                            selectedTime: result['time'],
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  },
+                        if (result != null && services[index]['label'] == 'General Cleaning') {
+                          if (!mounted) return;
+                          Navigator.push(
+                            // ignore: use_build_context_synchronously
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GeneralCleaningCalculator(
+                                selectedDate: result['date'],
+                                selectedTime: result['time'],
+                              ),
+                            ),
+                          );
+                        }
+                        else if (result != null && services[index]['label'] == 'Post Construction Cleaning') {
+                          if (!mounted) return;
+                          Navigator.push(
+                            // ignore: use_build_context_synchronously
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GeneralCleaningCalculator(
+                                selectedDate: result['date'],
+                                selectedTime: result['time'],
+                              ),
+                            ),
+                          );
+                        }
+                      },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -165,45 +169,6 @@ class ResidentialCleaningPage extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Calendar'),
-          BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
-          BottomNavigationBarItem(icon: Icon(Icons.logout), label: 'Logout'),
-        ],
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeServicePage()));
-              break;
-            case 1:
-              // Calendar navigation (handled in another page)
-              break;
-            case 2:
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage()));
-              break;
-            case 3:
-              _logout(context);
-              break;
-          }
-        },
-        selectedItemColor: Colors.deepPurple,
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-      ),
     );
-  }
-
-  Future<void> _logout(BuildContext context) async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      // ignore: use_build_context_synchronously
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeServicePage()));
-    } catch (e) {
-      if (kDebugMode) {
-        print("Error logging out: $e");
-      }
-    }
   }
 }
