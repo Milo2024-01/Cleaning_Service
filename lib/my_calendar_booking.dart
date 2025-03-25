@@ -14,7 +14,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   DateTime _currentDate = DateTime.now();
-  List<DateTime> _bookedDates = [];
+  List<Map<String, dynamic>> _bookings = []; // Changed to store booking data
   String? _currentUserId;
   bool _isLoading = true;
 
@@ -37,7 +37,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
           .where('userId', isEqualTo: _currentUserId)
           .get();
 
-      final dates = snapshot.docs.map((doc) {
+      final bookings = snapshot.docs.map((doc) {
         final data = doc.data();
         dynamic dateData = data['selectedDate'];
         
@@ -50,12 +50,16 @@ class _BookingCalendarState extends State<BookingCalendar> {
           date = DateTime.now();
         }
         
-        return DateTime(date.year, date.month, date.day);
+        return {
+          'date': DateTime(date.year, date.month, date.day),
+          'status': data['status'] ?? 'pending',
+          'docId': doc.id,
+        };
       }).toList();
 
       if (mounted) {
         setState(() {
-          _bookedDates = dates;
+          _bookings = bookings;
           _isLoading = false;
         });
       }
@@ -64,13 +68,54 @@ class _BookingCalendarState extends State<BookingCalendar> {
     }
   }
 
+  Color _getDateColor(DateTime date) {
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    final booking = _bookings.firstWhere(
+      (booking) {
+        final bookedDate = booking['date'] as DateTime;
+        return bookedDate.year == normalizedDate.year &&
+               bookedDate.month == normalizedDate.month &&
+               bookedDate.day == normalizedDate.day;
+      },
+      orElse: () => {'status': ''},
+    );
+
+    if (booking['status'] == 'completed') {
+      return Colors.green[100]!;
+    } else if (booking['status'] == 'pending') {
+      return Colors.red[100]!;
+    }
+    return Colors.transparent;
+  }
+
+  Color _getTextColor(DateTime date) {
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    final booking = _bookings.firstWhere(
+      (booking) {
+        final bookedDate = booking['date'] as DateTime;
+        return bookedDate.year == normalizedDate.year &&
+               bookedDate.month == normalizedDate.month &&
+               bookedDate.day == normalizedDate.day;
+      },
+      orElse: () => {'status': ''},
+    );
+
+    if (booking['status'] == 'completed') {
+      return Colors.green[800]!;
+    } else if (booking['status'] == 'pending') {
+      return Colors.red[800]!;
+    }
+    return Colors.black;
+  }
+
   bool _isDateBooked(DateTime date) {
     final normalizedDate = DateTime(date.year, date.month, date.day);
-    return _bookedDates.any((bookedDate) => 
-      bookedDate.year == normalizedDate.year &&
-      bookedDate.month == normalizedDate.month &&
-      bookedDate.day == normalizedDate.day
-    );
+    return _bookings.any((booking) {
+      final bookedDate = booking['date'] as DateTime;
+      return bookedDate.year == normalizedDate.year &&
+             bookedDate.month == normalizedDate.month &&
+             bookedDate.day == normalizedDate.day;
+    });
   }
 
   Widget _buildDateCell(int day) {
@@ -81,7 +126,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
     return Container(
       margin: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: isBooked ? Colors.red[100] : Colors.transparent,
+        color: isBooked ? _getDateColor(date) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isToday ? Colors.blue : Colors.transparent,
@@ -96,10 +141,14 @@ class _BookingCalendarState extends State<BookingCalendar> {
               day.toString(),
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: isBooked ? Colors.red[800] : Colors.black,
+                color: isBooked ? _getTextColor(date) : Colors.black,
               ),
             ),
-            if (isBooked) const Icon(Icons.bookmark, size: 12, color: Colors.red),
+            if (isBooked) Icon(
+              Icons.bookmark,
+              size: 12,
+              color: _getTextColor(date),
+            ),
           ],
         ),
       ),
@@ -190,14 +239,28 @@ class _BookingCalendarState extends State<BookingCalendar> {
                     child: _buildCalendarGrid(),
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 16.0),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.bookmark, size: 16, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Booked dates', style: TextStyle(fontSize: 14)),
+                      Container(
+                        width: 16,
+                        height: 16,
+                        color: Colors.red[100],
+                        child: const Icon(Icons.bookmark, size: 12, color: Colors.red),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Pending', style: TextStyle(fontSize: 14)),
+                      const SizedBox(width: 16),
+                      Container(
+                        width: 16,
+                        height: 16,
+                        color: Colors.green[100],
+                        child: const Icon(Icons.bookmark, size: 12, color: Colors.green),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Completed', style: TextStyle(fontSize: 14)),
                     ],
                   ),
                 ),
