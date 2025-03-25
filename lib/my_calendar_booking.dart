@@ -88,14 +88,28 @@ class _BookingCalendarState extends State<BookingCalendar> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Booking cancelled successfully')),
+          SnackBar(
+            content: const Text('Booking cancelled successfully'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
         );
         _fetchBookings();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to cancel booking: $e')),
+          SnackBar(
+            content: Text('Failed to cancel booking: $e'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
         );
       }
     }
@@ -107,67 +121,142 @@ class _BookingCalendarState extends State<BookingCalendar> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Booking Details'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDetailRow('Service:', booking['serviceLabel']),
-            _buildDetailRow('Date:', DateFormat('MMMM d, yyyy').format(bookingDate)),
-            _buildDetailRow('Time:', booking['selectedTime']),
-            _buildDetailRow('Status:', booking['status'].toString().toUpperCase(),
-              color: booking['status'] == 'completed' 
-                  ? Colors.green 
-                  : booking['status'] == 'pending' 
-                      ? Colors.orange 
-                      : Colors.red),
-            const SizedBox(height: 16),
-            if (canCancel)
-              Text(
-                'You can cancel this booking until ${DateFormat('MMM d, h:mm a').format(bookingDate.subtract(const Duration(hours: 48)))}',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-          ],
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+        elevation: 8,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                // ignore: deprecated_member_use
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                spreadRadius: 5,
+              ),
+            ],
           ),
-          if (canCancel)
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _cancelBooking(booking['docId']);
-              },
-              child: const Text('Cancel Booking', style: TextStyle(color: Colors.red)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Booking Details',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepPurple,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildModernDetailRow(Icons.cleaning_services, booking['serviceLabel']),
+              _buildModernDetailRow(Icons.calendar_today, DateFormat('MMMM d, yyyy').format(bookingDate)),
+              _buildModernDetailRow(Icons.access_time, booking['selectedTime']),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  // ignore: deprecated_member_use
+                  color: _getStatusColor(booking['status']).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    // ignore: deprecated_member_use
+                    color: _getStatusColor(booking['status']).withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  booking['status'].toString().toUpperCase(),
+                  style: TextStyle(
+                    color: _getStatusColor(booking['status']),
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              if (canCancel)
+                Text(
+                  '⚠️ Cancellation possible until ${DateFormat('MMM d, h:mm a').format(bookingDate.subtract(const Duration(hours: 48)))}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.orange,
+                  ),
+                ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.grey,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Close'),
+                  ),
+                  if (canCancel) ...[
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _cancelBooking(booking['docId']);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red[50],
+                        foregroundColor: Colors.red,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text('Cancel Booking'),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernDetailRow(IconData icon, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.deepPurple),
+          const SizedBox(width: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
             ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {Color? color}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(color: color),
-            ),
-          ),
-        ],
-      ),
-    );
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'completed':
+        return Colors.green;
+      case 'cancelled':
+        return Colors.grey;
+      case 'pending':
+      default:
+        return Colors.orange;
+    }
   }
 
   Color _getDateColor(DateTime date) {
@@ -182,14 +271,16 @@ class _BookingCalendarState extends State<BookingCalendar> {
       orElse: () => {'status': ''},
     );
 
-    if (booking['status'] == 'completed') {
-      return Colors.green[100]!;
-    } else if (booking['status'] == 'pending') {
-      return Colors.red[100]!;
-    } else if (booking['status'] == 'cancelled') {
-      return Colors.grey[300]!;
+    switch (booking['status']) {
+      case 'completed':
+        return Colors.green[100]!;
+      case 'pending':
+        return Colors.red[100]!;
+      case 'cancelled':
+        return Colors.grey[300]!;
+      default:
+        return Colors.transparent;
     }
-    return Colors.transparent;
   }
 
   Color _getTextColor(DateTime date) {
@@ -204,14 +295,16 @@ class _BookingCalendarState extends State<BookingCalendar> {
       orElse: () => {'status': ''},
     );
 
-    if (booking['status'] == 'completed') {
-      return Colors.green[800]!;
-    } else if (booking['status'] == 'pending') {
-      return Colors.red[800]!;
-    } else if (booking['status'] == 'cancelled') {
-      return Colors.grey[800]!;
+    switch (booking['status']) {
+      case 'completed':
+        return Colors.green[800]!;
+      case 'pending':
+        return Colors.red[800]!;
+      case 'cancelled':
+        return Colors.grey[800]!;
+      default:
+        return Colors.black;
     }
-    return Colors.black;
   }
 
   bool _isDateBooked(DateTime date) {
@@ -229,45 +322,60 @@ class _BookingCalendarState extends State<BookingCalendar> {
     final isBooked = _isDateBooked(date);
     final isToday = DateUtils.isSameDay(date, DateTime.now());
 
-    return GestureDetector(
-      onTap: () {
-        if (isBooked) {
-          final booking = _bookings.firstWhere((b) {
-            final bookedDate = b['date'] as DateTime;
-            return bookedDate.year == date.year &&
-                   bookedDate.month == date.month &&
-                   bookedDate.day == date.day;
-          });
-          _showBookingDetails(booking);
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: isBooked ? _getDateColor(date) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isToday ? Colors.blue : Colors.transparent,
-            width: 2,
-          ),
+    return Container(
+      margin: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: isBooked ? _getDateColor(date) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isToday ? Colors.blue : Colors.grey[200]!,
+          width: isToday ? 2 : 1,
         ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                day.toString(),
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isBooked ? _getTextColor(date) : Colors.black,
+        boxShadow: [
+          if (isBooked)
+            BoxShadow(
+              // ignore: deprecated_member_use
+              color: _getTextColor(date).withOpacity(0.2),
+              blurRadius: 6,
+              spreadRadius: 1,
+            ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            if (isBooked) {
+              final booking = _bookings.firstWhere((b) {
+                final bookedDate = b['date'] as DateTime;
+                return bookedDate.year == date.year &&
+                       bookedDate.month == date.month &&
+                       bookedDate.day == date.day;
+              });
+              _showBookingDetails(booking);
+            }
+          },
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  day.toString(),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isBooked ? _getTextColor(date) : Colors.black87,
+                  ),
                 ),
-              ),
-              if (isBooked) Icon(
-                Icons.bookmark,
-                size: 12,
-                color: _getTextColor(date),
-              ),
-            ],
+                if (isBooked)
+                  Icon(
+                    Icons.circle,
+                    size: 8,
+                    color: _getTextColor(date),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -307,87 +415,194 @@ class _BookingCalendarState extends State<BookingCalendar> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Bookings Calendar'),
+        title: const Text(
+          'My Bookings Calendar',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
         centerTitle: true,
+        backgroundColor: Colors.deepPurple,
+        elevation: 4,
+        // ignore: deprecated_member_use
+        shadowColor: Colors.deepPurple.withOpacity(0.3),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(16),
+          ),
+        ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.chevron_left),
-                        onPressed: () => _changeMonth(-1),
-                      ),
-                      Text(
-                        DateFormat('MMMM yyyy').format(_currentDate),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+          ? const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+              ),
+            )
+          : Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.deepPurple.shade50,
+                    Colors.white,
+                  ],
+                ),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          // ignore: deprecated_member_use
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          spreadRadius: 2,
                         ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.chevron_left),
+                          onPressed: () => _changeMonth(-1),
+                          style: IconButton.styleFrom(
+                            // ignore: deprecated_member_use
+                            backgroundColor: Colors.deepPurple.withOpacity(0.1),
+                          ),
+                        ),
+                        Text(
+                          DateFormat('MMMM yyyy').format(_currentDate),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: () => _changeMonth(1),
+                          style: IconButton.styleFrom(
+                            // ignore: deprecated_member_use
+                            backgroundColor: Colors.deepPurple.withOpacity(0.1),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          // ignore: deprecated_member_use
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _WeekdayLabel('S'),
+                        _WeekdayLabel('M'),
+                        _WeekdayLabel('T'),
+                        _WeekdayLabel('W'),
+                        _WeekdayLabel('T'),
+                        _WeekdayLabel('F'),
+                        _WeekdayLabel('S'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            // ignore: deprecated_member_use
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            spreadRadius: 2,
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.chevron_right),
-                        onPressed: () => _changeMonth(1),
-                      ),
-                    ],
+                      child: _buildCalendarGrid(),
+                    ),
                   ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _WeekdayLabel('Sun'),
-                      _WeekdayLabel('Mon'),
-                      _WeekdayLabel('Tue'),
-                      _WeekdayLabel('Wed'),
-                      _WeekdayLabel('Thu'),
-                      _WeekdayLabel('Fri'),
-                      _WeekdayLabel('Sat'),
-                    ],
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          // ignore: deprecated_member_use
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 16,
+                      runSpacing: 8,
+                      children: [
+                        _buildStatusIndicator(Colors.red[100]!, Colors.red, 'Pending'),
+                        _buildStatusIndicator(Colors.green[100]!, Colors.green, 'Completed'),
+                        _buildStatusIndicator(Colors.grey[300]!, Colors.grey, 'Cancelled'),
+                        _buildStatusIndicator(Colors.white, Colors.blue, 'Today'),
+                      ],
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: _buildCalendarGrid(),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 16,
-                    children: [
-                      _buildStatusIndicator(Colors.red[100]!, Colors.red, 'Pending'),
-                      _buildStatusIndicator(Colors.green[100]!, Colors.green, 'Completed'),
-                      _buildStatusIndicator(Colors.grey[300]!, Colors.grey, 'Cancelled'),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
     );
   }
 
   Widget _buildStatusIndicator(Color bgColor, Color iconColor, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 16,
-          height: 16,
-          color: bgColor,
-          child: Icon(Icons.bookmark, size: 12, color: iconColor),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          // ignore: deprecated_member_use
+          color: iconColor.withOpacity(0.3),
+          width: 1,
         ),
-        const SizedBox(width: 8),
-        Text(text, style: const TextStyle(fontSize: 14)),
-      ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.circle, size: 12, color: iconColor),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: iconColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -399,11 +614,14 @@ class _WeekdayLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 36,
+      width: 32,
       child: Text(
         label,
         textAlign: TextAlign.center,
-        style: const TextStyle(fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.deepPurple,
+        ),
       ),
     );
   }

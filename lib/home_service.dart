@@ -2,28 +2,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'profile_page.dart';
+import 'package:text101/my_calendar_booking.dart';
+import 'package:text101/profile_page.dart';
 import 'main.dart';
 import 'residential_cleaning.dart';
 import 'specialize_cleaning.dart';
-import 'my_calendar_booking.dart';
-
-void main() {
-  runApp(const MyApp());
-}
-
-final List<Map<String, dynamic>> categories = [
-  {
-    'icon': Icons.home,
-    'label': 'Residential Cleaning',
-    'color': Colors.blueAccent,
-  },
-  {
-    'icon': Icons.cleaning_services,
-    'label': 'Special Cleaning Service',
-    'color': Colors.orangeAccent,
-  },
-];
 
 class HomeServicePage extends StatefulWidget {
   const HomeServicePage({super.key});
@@ -32,7 +15,7 @@ class HomeServicePage extends StatefulWidget {
   _HomeServicePageState createState() => _HomeServicePageState();
 }
 
-class _HomeServicePageState extends State<HomeServicePage> {
+class _HomeServicePageState extends State<HomeServicePage> with SingleTickerProviderStateMixin {
   final List<String> imagePaths = [
     'assets/images/csimg1.png',
     'assets/images/csimg2.png',
@@ -42,18 +25,101 @@ class _HomeServicePageState extends State<HomeServicePage> {
   late PageController _pageController;
   int _currentIndex = 0;
   int _selectedIndex = 0;
+  List<Map<String, dynamic>> _recommendedServices = [];
+  bool _isLoadingRecommendations = true;
+  late AnimationController _animationController;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(1, 0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutQuart,
+    ));
     Future.delayed(const Duration(seconds: 3), _autoSlide);
+    _loadRecommendedServices();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _animationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadRecommendedServices() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() => _isLoadingRecommendations = false);
+      return;
+    }
+
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('bookings')
+          .where('userId', isEqualTo: user.uid)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        if (kDebugMode) {
+          print("No bookings found for user: ${user.uid}");
+        }
+        setState(() {
+          _isLoadingRecommendations = false;
+          _recommendedServices = [];
+        });
+        return;
+      }
+
+      // Count service frequencies
+      final serviceCounts = <String, int>{};
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final service = data['serviceLabel']?.toString() ?? 'Unknown Service';
+        serviceCounts[service] = (serviceCounts[service] ?? 0) + 1;
+      }
+
+      final sortedServices = serviceCounts.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+
+      // Define our new color scheme
+      final serviceColors = [
+        const Color.fromARGB(255, 218, 24, 176),        // First service - Green
+        Colors.lightBlue,    // Second service - Light Blue
+        Colors.pink,         // Third service - Pink
+      ];
+
+      setState(() {
+        _recommendedServices = sortedServices.take(3).map((entry) {
+          return {
+            'label': entry.key,
+            'icon': entry.key.toLowerCase().contains('residential') 
+                ? Icons.home 
+                : Icons.cleaning_services,
+            'color': serviceColors[_recommendedServices.length % serviceColors.length],
+          };
+        }).toList();
+        _isLoadingRecommendations = false;
+      });
+
+      // Start animation after data loads
+      _animationController.forward();
+
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error loading recommendations: $e");
+      }
+      setState(() => _isLoadingRecommendations = false);
+    }
   }
 
   void _autoSlide() {
@@ -208,55 +274,152 @@ class _HomeServicePageState extends State<HomeServicePage> {
               ),
             ),
             const SizedBox(height: 20),
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Search',
-                prefixIcon: const Icon(Icons.search, color: Colors.blueAccent),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.grey[200],
-              ),
-            ),
-            const SizedBox(height: 20),
             Expanded(
-              child: GridView.builder(
-                itemCount: categories.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.2,
-                ),
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      if (categories[index]['label'] == 'Residential Cleaning') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ResidentialCleaningPage(),
+              child: Column(
+                children: [
+                  // Main services
+                  Expanded(
+                    flex: 2,
+                    child: GridView.builder(
+                      itemCount: 2,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.2,
+                      ),
+                      itemBuilder: (context, index) {
+                        return GestureDetector(
+                          onTap: () {
+                            if (index == 0) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ResidentialCleaningPage(),
+                                ),
+                              );
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SpecializeCleaningPage(),
+                                ),
+                              );
+                            }
+                          },
+                          child: CategoryCard(
+                            icon: index == 0 ? Icons.home : Icons.cleaning_services,
+                            label: index == 0 ? 'Residential Cleaning' : 'Special Cleaning',
+                            color: index == 0 ? Colors.blueAccent : Colors.orangeAccent,
                           ),
                         );
-                      } else if (categories[index]['label'] ==
-                          'Special Cleaning Service') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => SpecializeCleaningPage(),
-                          ),
-                        );
-                      }
-                    },
-                    child: CategoryCard(
-                      icon: categories[index]['icon'],
-                      label: categories[index]['label'],
-                      color: categories[index]['color'],
+                      },
                     ),
-                  );
-                },
+                  ),
+                  
+                  // Recommended services section with animation
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      'Your Top Booked Services',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent,
+                      ),
+                    ),
+                  ),
+                  
+                  _isLoadingRecommendations
+                      ? const CircularProgressIndicator()
+                      : _recommendedServices.isEmpty
+                          ? const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8.0),
+                              child: Text(
+                                'No booking history yet',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            )
+                          : SizedBox(
+                              height: 120,
+                              child: SlideTransition(
+                                position: _slideAnimation,
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: _recommendedServices.length,
+                                  itemBuilder: (context, index) {
+                                    final service = _recommendedServices[index];
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                      child: ServiceCard(
+                                        icon: service['icon'],
+                                        label: service['label'],
+                                        color: service['color'],
+                                        delay: index * 200, // Staggered delay
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                  
+                  // Ratings section
+                  Container(
+                    margin: const EdgeInsets.only(top: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Customer Satisfaction',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.star, color: Colors.amber, size: 28),
+                            Icon(Icons.star, color: Colors.amber, size: 28),
+                            Icon(Icons.star, color: Colors.amber, size: 28),
+                            Icon(Icons.star, color: Colors.amber, size: 28),
+                            Icon(Icons.star, color: Colors.amber, size: 28),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          '4.9/5.0 from 128 reviews',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        const SizedBox(height: 4),
+                        TextButton(
+                          onPressed: () {
+                            // Add view all reviews functionality
+                          },
+                          child: const Text(
+                            'View All Reviews',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blueAccent,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -280,7 +443,112 @@ class _HomeServicePageState extends State<HomeServicePage> {
   }
 }
 
-// ✅ CategoryCard Widget (Previously Missing)
+class ServiceCard extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final int delay;
+
+  const ServiceCard({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.color,
+    this.delay = 0,
+  });
+
+  @override
+  State<ServiceCard> createState() => _ServiceCardState();
+}
+
+class _ServiceCardState extends State<ServiceCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _offsetAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+
+    _offsetAnimation = Tween<Offset>(
+      begin: const Offset(0.5, 0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    ));
+
+    _opacityAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
+    ));
+
+    // Start animation after delay
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) {
+        _controller.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideTransition(
+      position: _offsetAnimation,
+      child: FadeTransition(
+        opacity: _opacityAnimation,
+        child: Container(
+          width: 135,
+          decoration: BoxDecoration(
+            color: widget.color.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: widget.color.withOpacity(0.4),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(widget.icon, size: 40, color: widget.color),
+              const SizedBox(height: 8),
+              Text(
+                widget.label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: widget.color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class CategoryCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -297,16 +565,30 @@ class CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        // ignore: deprecated_member_use
         color: color.withOpacity(0.2),
         borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            spreadRadius: 1,
+          ),
+        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, size: 50, color: color),
           const SizedBox(height: 10),
-          Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
         ],
       ),
     );
