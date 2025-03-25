@@ -14,7 +14,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   DateTime _currentDate = DateTime.now();
-  List<Map<String, dynamic>> _bookings = []; // Changed to store booking data
+  List<Map<String, dynamic>> _bookings = [];
   String? _currentUserId;
   bool _isLoading = true;
 
@@ -54,6 +54,12 @@ class _BookingCalendarState extends State<BookingCalendar> {
           'date': DateTime(date.year, date.month, date.day),
           'status': data['status'] ?? 'pending',
           'docId': doc.id,
+          'serviceLabel': data['serviceLabel'] ?? 'Unknown Service',
+          'selectedTime': data['selectedTime'] ?? 'Unknown Time',
+          'selectedDate': date,
+          'createdAt': data['createdAt'] is Timestamp 
+              ? (data['createdAt'] as Timestamp).toDate() 
+              : DateTime.now(),
         };
       }).toList();
 
@@ -66,6 +72,102 @@ class _BookingCalendarState extends State<BookingCalendar> {
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  bool _canCancelBooking(DateTime bookingDate) {
+    final now = DateTime.now();
+    final difference = bookingDate.difference(now);
+    return difference.inHours > 48;
+  }
+
+  Future<void> _cancelBooking(String docId) async {
+    try {
+      await _firestore.collection('bookings').doc(docId).update({
+        'status': 'cancelled',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Booking cancelled successfully')),
+        );
+        _fetchBookings();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to cancel booking: $e')),
+        );
+      }
+    }
+  }
+
+  void _showBookingDetails(Map<String, dynamic> booking) {
+    final bookingDate = booking['selectedDate'] as DateTime;
+    final canCancel = _canCancelBooking(bookingDate) && booking['status'] == 'pending';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Booking Details'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildDetailRow('Service:', booking['serviceLabel']),
+            _buildDetailRow('Date:', DateFormat('MMMM d, yyyy').format(bookingDate)),
+            _buildDetailRow('Time:', booking['selectedTime']),
+            _buildDetailRow('Status:', booking['status'].toString().toUpperCase(),
+              color: booking['status'] == 'completed' 
+                  ? Colors.green 
+                  : booking['status'] == 'pending' 
+                      ? Colors.orange 
+                      : Colors.red),
+            const SizedBox(height: 16),
+            if (canCancel)
+              Text(
+                'You can cancel this booking until ${DateFormat('MMM d, h:mm a').format(bookingDate.subtract(const Duration(hours: 48)))}',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          if (canCancel)
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _cancelBooking(booking['docId']);
+              },
+              child: const Text('Cancel Booking', style: TextStyle(color: Colors.red)),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(color: color),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Color _getDateColor(DateTime date) {
@@ -84,6 +186,8 @@ class _BookingCalendarState extends State<BookingCalendar> {
       return Colors.green[100]!;
     } else if (booking['status'] == 'pending') {
       return Colors.red[100]!;
+    } else if (booking['status'] == 'cancelled') {
+      return Colors.grey[300]!;
     }
     return Colors.transparent;
   }
@@ -104,6 +208,8 @@ class _BookingCalendarState extends State<BookingCalendar> {
       return Colors.green[800]!;
     } else if (booking['status'] == 'pending') {
       return Colors.red[800]!;
+    } else if (booking['status'] == 'cancelled') {
+      return Colors.grey[800]!;
     }
     return Colors.black;
   }
@@ -123,33 +229,46 @@ class _BookingCalendarState extends State<BookingCalendar> {
     final isBooked = _isDateBooked(date);
     final isToday = DateUtils.isSameDay(date, DateTime.now());
 
-    return Container(
-      margin: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: isBooked ? _getDateColor(date) : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isToday ? Colors.blue : Colors.transparent,
-          width: 2,
+    return GestureDetector(
+      onTap: () {
+        if (isBooked) {
+          final booking = _bookings.firstWhere((b) {
+            final bookedDate = b['date'] as DateTime;
+            return bookedDate.year == date.year &&
+                   bookedDate.month == date.month &&
+                   bookedDate.day == date.day;
+          });
+          _showBookingDetails(booking);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: isBooked ? _getDateColor(date) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isToday ? Colors.blue : Colors.transparent,
+            width: 2,
+          ),
         ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              day.toString(),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isBooked ? _getTextColor(date) : Colors.black,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                day.toString(),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isBooked ? _getTextColor(date) : Colors.black,
+                ),
               ),
-            ),
-            if (isBooked) Icon(
-              Icons.bookmark,
-              size: 12,
-              color: _getTextColor(date),
-            ),
-          ],
+              if (isBooked) Icon(
+                Icons.bookmark,
+                size: 12,
+                color: _getTextColor(date),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -241,31 +360,34 @@ class _BookingCalendarState extends State<BookingCalendar> {
                 ),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 16,
                     children: [
-                      Container(
-                        width: 16,
-                        height: 16,
-                        color: Colors.red[100],
-                        child: const Icon(Icons.bookmark, size: 12, color: Colors.red),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Pending', style: TextStyle(fontSize: 14)),
-                      const SizedBox(width: 16),
-                      Container(
-                        width: 16,
-                        height: 16,
-                        color: Colors.green[100],
-                        child: const Icon(Icons.bookmark, size: 12, color: Colors.green),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Completed', style: TextStyle(fontSize: 14)),
+                      _buildStatusIndicator(Colors.red[100]!, Colors.red, 'Pending'),
+                      _buildStatusIndicator(Colors.green[100]!, Colors.green, 'Completed'),
+                      _buildStatusIndicator(Colors.grey[300]!, Colors.grey, 'Cancelled'),
                     ],
                   ),
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildStatusIndicator(Color bgColor, Color iconColor, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          color: bgColor,
+          child: Icon(Icons.bookmark, size: 12, color: iconColor),
+        ),
+        const SizedBox(width: 8),
+        Text(text, style: const TextStyle(fontSize: 14)),
+      ],
     );
   }
 }
