@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,11 +12,11 @@ import 'package:mime/mime.dart';
 import 'package:image/image.dart' as img;
 import 'package:google_fonts/google_fonts.dart';
 import 'address_map_picker.dart';
-import 'email_service.dart'; // Import EmailService if defined in a separate file
-import 'home_service.dart'; // Import HomeServicePage
+import 'email_service.dart';
+import 'home_service.dart';
 
 class PaymentUploadScreen extends StatefulWidget {
-  final int totalCost; // Define totalCost here
+  final int totalCost;
   final DateTime selectedDate;
   final TimeOfDay? selectedTime;
   final int itemSize;
@@ -23,7 +24,7 @@ class PaymentUploadScreen extends StatefulWidget {
 
   const PaymentUploadScreen({
     super.key,
-    required this.totalCost, // Add totalCost to the constructor
+    required this.totalCost,
     required this.selectedDate,
     required this.selectedTime,
     required this.itemSize,
@@ -60,11 +61,11 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            _buildServiceDetailsCard(), // Display service details
+            _buildServiceDetailsCard(),
             const SizedBox(height: 20),
-            _buildTotalCostCard(), // Display total cost
+            _buildTotalCostCard(),
             const SizedBox(height: 20),
-            _buildFileUploadCard(), // File upload section
+            _buildFileUploadCard(),
             const SizedBox(height: 20),
             AddressMapPicker(
               onAddressSelected: (LatLng location, String address) {
@@ -75,14 +76,13 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
               },
             ),
             const SizedBox(height: 20),
-            _buildSendButton(), // Send button
+            _buildSendButton(),
           ],
         ),
       ),
     );
   }
 
-  // Widget to display service details
   Widget _buildServiceDetailsCard() {
     return Card(
       elevation: 4,
@@ -102,23 +102,17 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
             const SizedBox(height: 10),
             Text(
               'Service: ${widget.serviceLabel}',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-              ),
+              style: GoogleFonts.poppins(fontSize: 16),
             ),
             const SizedBox(height: 10),
             Text(
               'Date: ${widget.selectedDate.toLocal().toString().split(' ')[0]}',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-              ),
+              style: GoogleFonts.poppins(fontSize: 16),
             ),
             const SizedBox(height: 10),
             Text(
               'Time: ${widget.selectedTime?.format(context) ?? "Not selected"}',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-              ),
+              style: GoogleFonts.poppins(fontSize: 16),
             ),
           ],
         ),
@@ -126,7 +120,6 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
     );
   }
 
-  // Widget to display total cost
   Widget _buildTotalCostCard() {
     return Card(
       elevation: 4,
@@ -157,7 +150,6 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
     );
   }
 
-  // Widget for file upload
   Widget _buildFileUploadCard() {
     return Card(
       elevation: 4,
@@ -188,8 +180,8 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 12),
               ),
               child: Text(
                 'Choose File',
@@ -206,7 +198,6 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
     );
   }
 
-  // Widget for the send button
   Widget _buildSendButton() {
     return ElevatedButton(
       onPressed: (_isSending || _isPickingFile) ? null : _sendEmail,
@@ -230,7 +221,6 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
     );
   }
 
-  // Method to pick a file
   Future<void> _pickFile() async {
     setState(() => _isPickingFile = true);
 
@@ -276,7 +266,6 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
     }
   }
 
-  // Method to send email with payment proof
   Future<void> _sendEmail() async {
     if (_selectedFile == null && _fileBytes == null) {
       _showMessage('Please upload proof of payment');
@@ -318,7 +307,7 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
       final User? user = _auth.currentUser;
       if (user == null) throw Exception('User not logged in');
 
-      final DocumentSnapshot userDoc =
+      final DocumentSnapshot userDoc = 
           await _firestore.collection('users').doc(user.uid).get();
       final String firstName = userDoc.get('first_name') ?? 'User';
 
@@ -331,32 +320,30 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
         firstName: firstName,
         address: _selectedAddress!,
         location: _selectedLocation!,
+        serviceLabel: widget.serviceLabel, // Added serviceLabel to email
       );
 
-      // Save booking details to Firestore
       await _saveBookingDetails(user.uid, firstName, user.email!);
 
       _showMessage('Payment proof sent successfully!', success: true);
 
-      // Navigate to HomeServicePage after successful submission
-      // ignore: use_build_context_synchronously
+      if (!mounted) return;
       Navigator.pushReplacement(
-        // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              HomeServicePage(), // Navigate to HomeServicePage
+          builder: (context) => const HomeServicePage(),
         ),
       );
     } catch (e) {
       _logger.e('Error sending email: $e');
       _showMessage('Error sending email: $e');
     } finally {
-      setState(() => _isSending = false);
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
     }
   }
 
-  // Method to save booking details to Firestore
   Future<void> _saveBookingDetails(
       String userId, String firstName, String email) async {
     try {
@@ -364,14 +351,17 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
         'userId': userId,
         'firstName': firstName,
         'email': email,
+        'serviceLabel': widget.serviceLabel, // Now included
         'selectedDate': widget.selectedDate.toIso8601String(),
         'selectedTime': widget.selectedTime?.format(context),
         'itemSize': widget.itemSize,
         'totalCost': widget.totalCost,
         'address': _selectedAddress,
-        'location':
-            GeoPoint(_selectedLocation!.latitude, _selectedLocation!.longitude),
-        'status': 'pending', // Add status field with value "pending"
+        'location': GeoPoint(
+          _selectedLocation!.latitude,
+          _selectedLocation!.longitude,
+        ),
+        'status': 'pending',
         'timestamp': FieldValue.serverTimestamp(),
       };
 
@@ -383,15 +373,14 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
     }
   }
 
-  // Method to get MIME type of the file
   String _getMimeType(String? fileName) {
     return fileName != null
         ? lookupMimeType(fileName) ?? 'application/octet-stream'
         : 'application/octet-stream';
   }
 
-  // Method to show a message using SnackBar
   void _showMessage(String message, {bool success = false}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),

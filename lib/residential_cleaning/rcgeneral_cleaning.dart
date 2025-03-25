@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../payment_upload.dart'; // Import only the PaymentUploadScreen
+import 'package:logger/logger.dart';
+import '../payment_upload.dart';
 
 class GeneralCleaningCalculator extends StatefulWidget {
   final String? selectedDate;
@@ -12,60 +13,141 @@ class GeneralCleaningCalculator extends StatefulWidget {
   });
 
   @override
-  _GeneralCleaningCalculatorState createState() =>
-      _GeneralCleaningCalculatorState();
+  State<GeneralCleaningCalculator> createState() => _GeneralCleaningCalculatorState();
 }
 
 class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
   int hours = 1;
   int cleaners = 1;
   final double ratePerHour = 350.0;
+  final Logger _logger = Logger();
 
-  double get totalCost => ratePerHour * hours * cleaners; // Auto calculation
+  double get totalCost => ratePerHour * hours * cleaners;
 
   void _bookService() async {
-  // Check if selectedDate and selectedTime are provided
-  if (widget.selectedDate == null || widget.selectedTime == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please select a date and time before booking.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    return;
+    _logger.d('Booking initiated');
+
+    if (widget.selectedDate == null || widget.selectedTime == null) {
+      _showSnackbar('Please select date and time first');
+      return;
+    }
+
+    try {
+      final selectedDate = _parseDate(widget.selectedDate!);
+      final selectedTime = _parseTime(widget.selectedTime!);
+
+      if (!mounted) return;
+      
+      // Navigate to PaymentUploadScreen
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PaymentUploadScreen(
+            totalCost: totalCost.toInt(),
+            selectedDate: selectedDate,
+            selectedTime: selectedTime,
+            itemSize: 1,
+            serviceLabel: 'General Cleaning',
+          ),
+        ),
+      );
+    } on FormatException catch (e) {
+      _logger.e('Format error: $e');
+      if (!mounted) return;
+      _showSnackbar('Invalid date/time format. Please use HH:mm format (e.g., 14:30)');
+    } catch (e) {
+      _logger.e('Booking error: $e');
+      if (!mounted) return;
+      _showSnackbar('Error processing your booking: ${e.toString()}');
+    }
   }
 
-  // Convert selectedDate (String) to DateTime
-  DateTime selectedDate = DateTime.parse(widget.selectedDate!);
+  DateTime _parseDate(String dateString) {
+    try {
+      return DateTime.parse(dateString);
+    } catch (e) {
+      _logger.e('Date parsing error: $e');
+      throw FormatException('Invalid date format. Expected yyyy-mm-dd');
+    }
+  }
 
-  // Convert selectedTime (String) to TimeOfDay
-  List<String> timeParts = widget.selectedTime!.split(":");
-  TimeOfDay selectedTime = TimeOfDay(
-    hour: int.parse(timeParts[0]),
-    minute: int.parse(timeParts[1]),
-  );
+  TimeOfDay _parseTime(String timeString) {
+    try {
+      // Handle both 24-hour and 12-hour formats
+      if (timeString.contains(' ')) {
+        return _parse12HourTime(timeString);
+      }
+      
+      // Handle 24-hour format
+      final parts = timeString.split(':');
+      if (parts.length != 2) throw FormatException('Invalid time format');
+      
+      final hour = int.parse(parts[0]);
+      final minute = int.parse(parts[1]);
+      
+      if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        throw FormatException('Time values out of range');
+      }
+      
+      return TimeOfDay(hour: hour, minute: minute);
+    } catch (e) {
+      _logger.e('Time parsing error: $e');
+      throw FormatException('Invalid time format. Expected HH:mm or h:mm a');
+    }
+  }
 
-  // Navigate to the payment screen with correct values
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(
-      builder: (context) => PaymentUploadScreen(
-        totalCost: totalCost.toInt(),
-        selectedDate: selectedDate,
-        selectedTime: selectedTime,
-        itemSize: 1, // You can adjust this as needed
-        serviceLabel: 'General Cleaning', // Pass the service label
+  TimeOfDay _parse12HourTime(String timeString) {
+    try {
+      final timeParts = timeString.split(' ');
+      if (timeParts.length != 2) throw FormatException('Invalid 12-hour format');
+      
+      final timeComponent = timeParts[0];
+      final period = timeParts[1].toUpperCase();
+      
+      final components = timeComponent.split(':');
+      if (components.length != 2) throw FormatException('Invalid time format');
+      
+      var hour = int.parse(components[0]);
+      final minute = int.parse(components[1]);
+      
+      if (period == 'PM' && hour != 12) {
+        hour += 12;
+      } else if (period == 'AM' && hour == 12) {
+        hour = 0;
+      }
+      
+      if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        throw FormatException('Time values out of range');
+      }
+      
+      return TimeOfDay(hour: hour, minute: minute);
+    } catch (e) {
+      _logger.e('12-hour time parsing error: $e');
+      throw FormatException('Invalid 12-hour format. Expected h:mm AM/PM');
+    }
+  }
+
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        duration: const Duration(seconds: 3),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cleaning Service'),
+        title: const Text('General Cleaning Service'),
+        backgroundColor: Colors.amber[700],
+        elevation: 5,
+        centerTitle: true,
       ),
       body: Container(
         width: double.infinity,
@@ -84,7 +166,7 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
             // ignore: deprecated_member_use
             color: Colors.white.withOpacity(0.9),
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
                 color: Colors.black26,
                 blurRadius: 8,
@@ -121,7 +203,7 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          '💰 Rate: 350 per hour, per cleaner',
+                          '💰 Rate: ₱350 per hour, per cleaner',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -151,76 +233,22 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        Row(
-                          children: [
-                            Icon(Icons.timer, color: Colors.amber[800]),
-                            const SizedBox(width: 10),
-                            const Text(
-                              'Hours:',
-                              style: TextStyle(fontSize: 18),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Slider(
-                                value: hours.toDouble(),
-                                min: 1,
-                                max: 10,
-                                divisions: 9,
-                                label: hours.toString(),
-                                activeColor: Colors.amber[700],
-                                inactiveColor: Colors.amber[100],
-                                onChanged: (value) {
-                                  setState(() {
-                                    hours = value.toInt();
-                                  });
-                                },
-                              ),
-                            ),
-                            Text(
-                              '$hours',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.amber[900],
-                              ),
-                            ),
-                          ],
+                        _buildSlider(
+                          icon: Icons.timer,
+                          label: 'Hours',
+                          value: hours.toDouble(),
+                          min: 1,
+                          max: 10,
+                          onChanged: (value) => setState(() => hours = value.toInt()),
                         ),
                         const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Icon(Icons.people, color: Colors.amber[800]),
-                            const SizedBox(width: 10),
-                            const Text(
-                              'Cleaners:',
-                              style: TextStyle(fontSize: 18),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Slider(
-                                value: cleaners.toDouble(),
-                                min: 1,
-                                max: 10,
-                                divisions: 9,
-                                label: cleaners.toString(),
-                                activeColor: Colors.amber[700],
-                                inactiveColor: Colors.amber[100],
-                                onChanged: (value) {
-                                  setState(() {
-                                    cleaners = value.toInt();
-                                  });
-                                },
-                              ),
-                            ),
-                            Text(
-                              '$cleaners',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.amber[900],
-                              ),
-                            ),
-                          ],
+                        _buildSlider(
+                          icon: Icons.people,
+                          label: 'Cleaners',
+                          value: cleaners.toDouble(),
+                          min: 1,
+                          max: 10,
+                          onChanged: (value) => setState(() => cleaners = value.toInt()),
                         ),
                         const SizedBox(height: 15),
                         Text(
@@ -236,26 +264,9 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _bookService,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber[700],
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: const Text(
-                      'Book Service',
-                      style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
-                  ),
-                ),
                 if (widget.selectedDate != null && widget.selectedTime != null)
                   Padding(
-                    padding: const EdgeInsets.only(top: 20),
+                    padding: const EdgeInsets.only(bottom: 20),
                     child: Column(
                       children: [
                         Text(
@@ -277,11 +288,71 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                       ],
                     ),
                   ),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: _bookService,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber[700],
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 40, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      elevation: 5,
+                    ),
+                    child: const Text(
+                      'Proceed to Payment',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSlider({
+    required IconData icon,
+    required String label,
+    required double value,
+    required double min,
+    required double max,
+    required Function(double) onChanged,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.amber[800]),
+        const SizedBox(width: 10),
+        Text('$label:', style: const TextStyle(fontSize: 18)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Slider(
+            value: value,
+            min: min,
+            max: max,
+            divisions: (max - min).toInt(),
+            label: value.toInt().toString(),
+            activeColor: Colors.amber[700],
+            inactiveColor: Colors.amber[100],
+            onChanged: onChanged,
+          ),
+        ),
+        Text(
+          value.toInt().toString(),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.amber[900],
+          ),
+        ),
+      ],
     );
   }
 }
