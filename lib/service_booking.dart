@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'main.dart'; // Import LoginPage file
+import 'main.dart'; // Import your LoginPage file
 
 class ServiceBookingPage extends StatefulWidget {
   const ServiceBookingPage({super.key});
@@ -14,7 +14,7 @@ class ServiceBookingPage extends StatefulWidget {
 class _ServiceBookingPageState extends State<ServiceBookingPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final _dateFormat = DateFormat('MMM d, yyyy');
+  final DateFormat _dateFormat = DateFormat('MMM d, yyyy');
   
   // Search and filter variables
   String _searchQuery = '';
@@ -22,6 +22,48 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
   DateTime? _toDate;
   String? _statusFilter;
   final TextEditingController _searchController = TextEditingController();
+  
+  // Cleaners tracking
+  int _totalCleaners = 0;
+  int _availableCleaners = 0;
+  int _unavailableCleaners = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCleanersData();
+  }
+
+  Future<void> _loadCleanersData() async {
+    try {
+      final snapshot = await _firestore.collection('Cleaner').get();
+      
+      int available = 0;
+      int unavailable = 0;
+      
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final status = data['status']?.toString().toLowerCase() ?? 'unavailable';
+        
+        if (status == 'available') {
+          available++;
+        } else {
+          unavailable++;
+        }
+      }
+      
+      setState(() {
+        _totalCleaners = snapshot.size;
+        _availableCleaners = available;
+        _unavailableCleaners = unavailable;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading cleaners data: ${e.toString()}')),
+      );
+    }
+  }
 
   Future<void> _logout() async {
     try {
@@ -151,12 +193,65 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
     return true;
   }
 
+  Widget _buildStatCard({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Card(
+        elevation: 2,
+        // ignore: deprecated_member_use
+        color: color.withOpacity(0.1),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            children: [
+              Icon(icon, size: 30, color: color),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Center(
+              child: Chip(
+                label: Text(
+                  'Cleaner: $_totalCleaners',
+                  style: const TextStyle(color: Colors.white),
+                ),
+                backgroundColor: Colors.blue,
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,
@@ -166,6 +261,50 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
       ),
       body: Column(
         children: [
+          // Stats Row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatCard(
+                  icon: Icons.people,
+                  value: '$_availableCleaners/$_totalCleaners',
+                  label: 'Available Cleaners',
+                  color: Colors.green,
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Available cleaners: $_availableCleaners')),
+                    );
+                  },
+                ),
+                _buildStatCard(
+                  icon: Icons.people_outline,
+                  value: '$_unavailableCleaners',
+                  label: 'Unavailable Cleaners',
+                  color: Colors.red,
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Unavailable cleaners: $_unavailableCleaners')),
+                    );
+                  },
+                ),
+                StreamBuilder<QuerySnapshot>(
+                  stream: _firestore.collection('bookings').snapshots(),
+                  builder: (context, snapshot) {
+                    final count = snapshot.hasData ? snapshot.data!.size : 0;
+                    return _buildStatCard(
+                      icon: Icons.book,
+                      value: count.toString(),
+                      label: 'Total Bookings',
+                      color: Colors.blue,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          
           // Search and Filter Section
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -220,24 +359,24 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
                     DropdownButton<String>(
                       hint: const Text('Status'),
                       value: _statusFilter,
-                      items: [
-                        DropdownMenuItem<String>(
+                      items: const [
+                        DropdownMenuItem(
                           value: null,
-                          child: const Text('All Status'),
+                          child: Text('All Status'),
                         ),
-                        const DropdownMenuItem<String>(
+                        DropdownMenuItem(
                           value: 'pending',
                           child: Text('Pending'),
                         ),
-                        const DropdownMenuItem<String>(
+                        DropdownMenuItem(
                           value: 'confirmed',
                           child: Text('Confirmed'),
                         ),
-                        const DropdownMenuItem<String>(
+                        DropdownMenuItem(
                           value: 'completed',
                           child: Text('Completed'),
                         ),
-                        const DropdownMenuItem<String>(
+                        DropdownMenuItem(
                           value: 'cancelled',
                           child: Text('Cancelled'),
                         ),

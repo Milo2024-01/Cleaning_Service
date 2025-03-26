@@ -170,7 +170,7 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => userCredential.user!.email == "admincs@gmail.com"
+        builder: (context) => userCredential.user!.email == "jd@gmail.com"
             ? const admin.ServiceBookingPage()
             : const user.HomeServicePage(),
       ),
