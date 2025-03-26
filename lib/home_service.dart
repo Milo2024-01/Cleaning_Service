@@ -321,7 +321,7 @@ class _HomeServicePageState extends State<HomeServicePage> with SingleTickerProv
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8.0),
                     child: Text(
-                      'Your Top Booked Services',
+                      'Recommended Services',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -368,10 +368,12 @@ class _HomeServicePageState extends State<HomeServicePage> with SingleTickerProv
                     margin: const EdgeInsets.only(top: 16),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
+                      // ignore: deprecated_member_use
                       color: Colors.blueAccent.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
+                          // ignore: deprecated_member_use
                           color: Colors.black.withOpacity(0.05),
                           blurRadius: 6,
                           spreadRadius: 1,
@@ -513,14 +515,17 @@ class _ServiceCardState extends State<ServiceCard> with SingleTickerProviderStat
         child: Container(
           width: 135,
           decoration: BoxDecoration(
+            // ignore: deprecated_member_use
             color: widget.color.withOpacity(0.15),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
+              // ignore: deprecated_member_use
               color: widget.color.withOpacity(0.4),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
+                // ignore: deprecated_member_use
                 color: Colors.black.withOpacity(0.05),
                 blurRadius: 4,
                 spreadRadius: 1,
@@ -565,10 +570,12 @@ class CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
+        // ignore: deprecated_member_use
         color: color.withOpacity(0.2),
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.1),
             blurRadius: 6,
             spreadRadius: 1,
