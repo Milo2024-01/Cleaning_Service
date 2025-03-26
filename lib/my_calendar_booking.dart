@@ -11,6 +11,13 @@ class BookingCalendar extends StatefulWidget {
 }
 
 class _BookingCalendarState extends State<BookingCalendar> {
+  // Color constants
+  static const Color pendingColor = Colors.blue;
+  static const Color confirmedColor = Colors.orange;
+  static const Color completedColor = Colors.green;
+  static const Color cancelledColor = Colors.grey;
+  static const Color todayColor = Colors.purple;
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   DateTime _currentDate = DateTime.now();
@@ -74,10 +81,10 @@ class _BookingCalendarState extends State<BookingCalendar> {
     }
   }
 
-  bool _canCancelBooking(DateTime bookingDate) {
+  bool _canCancelBooking(DateTime bookingDate, String status) {
     final now = DateTime.now();
     final difference = bookingDate.difference(now);
-    return difference.inHours > 48;
+    return difference.inHours > 48 && (status == 'pending' || status == 'confirmed');
   }
 
   Future<void> _cancelBooking(String docId) async {
@@ -117,7 +124,8 @@ class _BookingCalendarState extends State<BookingCalendar> {
 
   void _showBookingDetails(Map<String, dynamic> booking) {
     final bookingDate = booking['selectedDate'] as DateTime;
-    final canCancel = _canCancelBooking(bookingDate) && booking['status'] == 'pending';
+    final status = booking['status'] as String;
+    final canCancel = _canCancelBooking(bookingDate, status);
 
     showDialog(
       context: context,
@@ -133,8 +141,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                // ignore: deprecated_member_use
-                color: Colors.black.withOpacity(0.1),
+                color: Color.fromRGBO(0, 0, 0, 26), // Equivalent to black.withOpacity(0.1)
                 blurRadius: 20,
                 spreadRadius: 5,
               ),
@@ -160,19 +167,17 @@ class _BookingCalendarState extends State<BookingCalendar> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  // ignore: deprecated_member_use
-                  color: _getStatusColor(booking['status']).withOpacity(0.1),
+                  color: _getStatusColor(status).withAlpha(26), // ~10% opacity
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    // ignore: deprecated_member_use
-                    color: _getStatusColor(booking['status']).withOpacity(0.3),
+                    color: _getStatusColor(status).withAlpha(77), // ~30% opacity
                     width: 1,
                   ),
                 ),
                 child: Text(
-                  booking['status'].toString().toUpperCase(),
+                  status.toString().toUpperCase(),
                   style: TextStyle(
-                    color: _getStatusColor(booking['status']),
+                    color: _getStatusColor(status),
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
                   ),
@@ -209,7 +214,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                         _cancelBooking(booking['docId']);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[50],
+                        backgroundColor: Colors.red.shade50,
                         foregroundColor: Colors.red,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -250,12 +255,14 @@ class _BookingCalendarState extends State<BookingCalendar> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'completed':
-        return Colors.green;
+        return completedColor;
+      case 'confirmed':
+        return confirmedColor;
       case 'cancelled':
-        return Colors.grey;
+        return cancelledColor;
       case 'pending':
       default:
-        return Colors.orange;
+        return pendingColor;
     }
   }
 
@@ -273,11 +280,13 @@ class _BookingCalendarState extends State<BookingCalendar> {
 
     switch (booking['status']) {
       case 'completed':
-        return Colors.green[100]!;
+        return completedColor.withAlpha(51); // ~20% opacity
+      case 'confirmed':
+        return confirmedColor.withAlpha(51);
       case 'pending':
-        return Colors.red[100]!;
+        return pendingColor.withAlpha(51);
       case 'cancelled':
-        return Colors.grey[300]!;
+        return cancelledColor.withAlpha(51);
       default:
         return Colors.transparent;
     }
@@ -297,11 +306,13 @@ class _BookingCalendarState extends State<BookingCalendar> {
 
     switch (booking['status']) {
       case 'completed':
-        return Colors.green[800]!;
+        return completedColor;
+      case 'confirmed':
+        return confirmedColor;
       case 'pending':
-        return Colors.red[800]!;
+        return pendingColor;
       case 'cancelled':
-        return Colors.grey[800]!;
+        return cancelledColor;
       default:
         return Colors.black;
     }
@@ -328,14 +339,16 @@ class _BookingCalendarState extends State<BookingCalendar> {
         color: isBooked ? _getDateColor(date) : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isToday ? Colors.blue : Colors.grey[200]!,
+          color: isToday ? todayColor : Colors.grey.shade200,
           width: isToday ? 2 : 1,
         ),
         boxShadow: [
           if (isBooked)
             BoxShadow(
-              // ignore: deprecated_member_use
-              color: _getTextColor(date).withOpacity(0.2),
+              color: Color.alphaBlend(
+                _getTextColor(date).withAlpha(51), // ~20% opacity
+                Colors.white,
+              ),
               blurRadius: 6,
               spreadRadius: 1,
             ),
@@ -425,8 +438,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
         centerTitle: true,
         backgroundColor: Colors.deepPurple,
         elevation: 4,
-        // ignore: deprecated_member_use
-        shadowColor: Colors.deepPurple.withOpacity(0.3),
+        shadowColor: Color.fromRGBO(103, 58, 183, 77), // deepPurple.withOpacity(0.3)
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             bottom: Radius.circular(16),
@@ -446,7 +458,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.deepPurple.shade50,
+                    Color.fromRGBO(237, 231, 246, 1), // deepPurple.shade50
                     Colors.white,
                   ],
                 ),
@@ -460,8 +472,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          // ignore: deprecated_member_use
-                          color: Colors.black.withOpacity(0.05),
+                          color: Color.fromRGBO(0, 0, 0, 13), // black.withOpacity(0.05)
                           blurRadius: 10,
                           spreadRadius: 2,
                         ),
@@ -474,8 +485,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                           icon: const Icon(Icons.chevron_left),
                           onPressed: () => _changeMonth(-1),
                           style: IconButton.styleFrom(
-                            // ignore: deprecated_member_use
-                            backgroundColor: Colors.deepPurple.withOpacity(0.1),
+                            backgroundColor: Color.fromRGBO(103, 58, 183, 26), // deepPurple.withOpacity(0.1)
                           ),
                         ),
                         Text(
@@ -489,8 +499,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                           icon: const Icon(Icons.chevron_right),
                           onPressed: () => _changeMonth(1),
                           style: IconButton.styleFrom(
-                            // ignore: deprecated_member_use
-                            backgroundColor: Colors.deepPurple.withOpacity(0.1),
+                            backgroundColor: Color.fromRGBO(103, 58, 183, 26), // deepPurple.withOpacity(0.1)
                           ),
                         ),
                       ],
@@ -504,8 +513,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          // ignore: deprecated_member_use
-                          color: Colors.black.withOpacity(0.05),
+                          color: Color.fromRGBO(0, 0, 0, 13), // black.withOpacity(0.05)
                           blurRadius: 6,
                           spreadRadius: 1,
                         ),
@@ -533,8 +541,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            // ignore: deprecated_member_use
-                            color: Colors.black.withOpacity(0.05),
+                            color: Color.fromRGBO(0, 0, 0, 13), // black.withOpacity(0.05)
                             blurRadius: 10,
                             spreadRadius: 2,
                           ),
@@ -551,8 +558,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          // ignore: deprecated_member_use
-                          color: Colors.black.withOpacity(0.05),
+                          color: Color.fromRGBO(0, 0, 0, 13), // black.withOpacity(0.05)
                           blurRadius: 10,
                           spreadRadius: 2,
                         ),
@@ -563,10 +569,11 @@ class _BookingCalendarState extends State<BookingCalendar> {
                       spacing: 16,
                       runSpacing: 8,
                       children: [
-                        _buildStatusIndicator(Colors.red[100]!, Colors.red, 'Pending'),
-                        _buildStatusIndicator(Colors.green[100]!, Colors.green, 'Completed'),
-                        _buildStatusIndicator(Colors.grey[300]!, Colors.grey, 'Cancelled'),
-                        _buildStatusIndicator(Colors.white, Colors.blue, 'Today'),
+                        _buildStatusIndicator(pendingColor.withAlpha(51), pendingColor, 'Pending'),
+                        _buildStatusIndicator(confirmedColor.withAlpha(51), confirmedColor, 'Confirmed'),
+                        _buildStatusIndicator(completedColor.withAlpha(51), completedColor, 'Completed'),
+                        _buildStatusIndicator(cancelledColor.withAlpha(51), cancelledColor, 'Cancelled'),
+                        _buildStatusIndicator(Colors.white, todayColor, 'Today'),
                       ],
                     ),
                   ),
@@ -583,8 +590,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
         color: bgColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          // ignore: deprecated_member_use
-          color: iconColor.withOpacity(0.3),
+          color: iconColor.withAlpha(77), // ~30% opacity
           width: 1,
         ),
       ),

@@ -209,15 +209,15 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
                             onSelected: (value) => _updateStatus(docId, value),
                             itemBuilder: (context) => [
                               const PopupMenuItem(
-                                value: "Confirmed",
+                                value: "confirmed",
                                 child: Text("Confirm Booking"),
                               ),
                               const PopupMenuItem(
-                                value: "Completed",
+                                value: "completed",
                                 child: Text("Mark as Completed"),
                               ),
                               const PopupMenuItem(
-                                value: "Cancelled",
+                                value: "cancelled",
                                 child: Text("Cancel Booking"),
                               ),
                             ],
