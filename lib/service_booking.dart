@@ -521,7 +521,8 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  '\$$price',
+                                  // ignore: unnecessary_string_escapes
+                                  '\₱$price',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
