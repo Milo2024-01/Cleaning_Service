@@ -81,23 +81,63 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
     }
   }
 
-  Future<void> _updateStatus(String docId, String newStatus) async {
-    try {
-      await _firestore.collection('bookings').doc(docId).update({
-        'status': newStatus,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Status updated to $newStatus')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating status: ${e.toString()}')),
-      );
+ Future<void> _updateStatus(String docId, String newStatus) async {
+  try {
+    // First get the booking document
+    final bookingDoc = await _firestore.collection('bookings').doc(docId).get();
+    final bookingData = bookingDoc.data() as Map<String, dynamic>;
+    final List<String> assignedCleanerIds = List<String>.from(bookingData['assignedCleaners'] ?? []);
+
+    // Create a batch for atomic updates
+    final batch = _firestore.batch();
+    final bookingRef = _firestore.collection('bookings').doc(docId);
+
+    // Update cleaner statuses based on booking status
+    if (newStatus == 'confirmed') {
+      // Set cleaners to unavailable when confirming
+      for (final cleanerId in assignedCleanerIds) {
+        final cleanerRef = _firestore.collection('Cleaner').doc(cleanerId);
+        batch.update(cleanerRef, {
+          'status': 'unavailable',
+          'updatedAt': FieldValue.serverTimestamp(),
+          'updatedByBooking': docId, // Add this to pass security rules
+        });
+      }
+    } else if (newStatus == 'completed') {
+      // Set cleaners back to available when completing
+      for (final cleanerId in assignedCleanerIds) {
+        final cleanerRef = _firestore.collection('Cleaner').doc(cleanerId);
+        batch.update(cleanerRef, {
+          'status': 'available',
+          'updatedAt': FieldValue.serverTimestamp(),
+          'updatedByBooking': docId, // Add this to pass security rules
+        });
+      }
     }
+
+    // Update the booking status
+    batch.update(bookingRef, {
+      'status': newStatus,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    // Commit all updates as a single transaction
+    await batch.commit();
+
+    // Refresh cleaners data
+    await _loadCleanersData();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Status updated to $newStatus')),
+    );
+  } catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error updating status: ${e.toString()}')),
+    );
   }
+}
 
   String _formatDate(dynamic dateData) {
     try {
@@ -232,6 +272,60 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildCleanerChips(List<dynamic> cleanerIds) {
+    return FutureBuilder<List<DocumentSnapshot>>(
+      future: _getCleanersData(cleanerIds),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        }
+
+        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Text('No cleaners assigned');
+        }
+
+        final cleaners = snapshot.data!;
+
+        return Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          children: cleaners.map((cleaner) {
+            final data = cleaner.data() as Map<String, dynamic>;
+            final name = data['name'] ?? 'Unknown Cleaner';
+            final status = data['status'] ?? 'unknown';
+            final color = status == 'available' ? Colors.green : Colors.red;
+
+            return Chip(
+              label: Text(name),
+              // ignore: deprecated_member_use
+              backgroundColor: color.withOpacity(0.2),
+              avatar: CircleAvatar(
+                backgroundColor: color,
+                child: Text(
+                  name.substring(0, 1),
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Future<List<DocumentSnapshot>> _getCleanersData(List<dynamic> cleanerIds) async {
+    if (cleanerIds.isEmpty) return [];
+    
+    final List<DocumentSnapshot> cleaners = [];
+    for (final id in cleanerIds) {
+      final doc = await _firestore.collection('Cleaner').doc(id).get();
+      if (doc.exists) {
+        cleaners.add(doc);
+      }
+    }
+    return cleaners;
   }
 
   @override
@@ -455,6 +549,7 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
                     final price = data['totalCost']?.toString() ?? '0';
                     final status = data['status']?.toString() ?? 'Pending';
                     final statusColor = _getStatusColor(status);
+                    final assignedCleaners = List<String>.from(data['assignedCleaners'] ?? []);
 
                     return Card(
                       elevation: 2,
@@ -514,6 +609,22 @@ class _ServiceBookingPageState extends State<ServiceBookingPage> {
                                 const Icon(Icons.access_time, size: 16),
                                 const SizedBox(width: 4),
                                 Text(bookingTime),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            // Display assigned cleaners
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Assigned Cleaners:',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                _buildCleanerChips(assignedCleaners),
                               ],
                             ),
                             const SizedBox(height: 8),

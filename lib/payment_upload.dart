@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -43,10 +42,157 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
   bool _isPickingFile = false;
   LatLng? _selectedLocation;
   String? _selectedAddress;
+  List<Map<String, dynamic>> _availableCleaners = [];
+  final List<String> _selectedCleanerIds = [];
+  bool _isLoadingCleaners = false;
 
   final Logger _logger = Logger();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  String _standardizeString(String input) {
+    return input.toLowerCase().trim();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAvailableCleaners();
+  }
+
+  Future<void> _loadAvailableCleaners() async {
+    setState(() => _isLoadingCleaners = true);
+    try {
+      final serviceSkill = _standardizeString(widget.serviceLabel);
+      
+      // Get all available cleaners first
+      final snapshot = await _firestore.collection('Cleaner')
+          .where('status', isEqualTo: 'available')
+          .get();
+
+      // Filter locally for skills match (case insensitive)
+      final availableCleaners = snapshot.docs.where((doc) {
+        final skills = List<String>.from(doc['skills'] ?? []);
+        return skills.any((skill) => 
+            _standardizeString(skill) == serviceSkill);
+      }).map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'name': data['name'] ?? 'Unknown Cleaner',
+          'photoUrl': data['photoUrl'],
+          'rating': data['rating'] ?? 0.0,
+          'status': data['status'] ?? 'unavailable',
+        };
+      }).toList();
+
+      setState(() => _availableCleaners = availableCleaners);
+      
+      if (availableCleaners.isEmpty) {
+        _logger.w('No cleaners found for service: $serviceSkill');
+      }
+    } catch (e) {
+      _logger.e('Error loading cleaners', error: e);
+      _showMessage('Error loading cleaners. Please try again.');
+    } finally {
+      setState(() => _isLoadingCleaners = false);
+    }
+  }
+
+  Future<void> _selectCleaner(String cleanerId) async {
+    if (_selectedCleanerIds.length >= 2 && !_selectedCleanerIds.contains(cleanerId)) {
+      _showMessage('You can only select up to 2 cleaners');
+      return;
+    }
+
+    setState(() {
+      if (_selectedCleanerIds.contains(cleanerId)) {
+        _selectedCleanerIds.remove(cleanerId);
+      } else {
+        _selectedCleanerIds.add(cleanerId);
+      }
+    });
+  }
+
+  void _showMessage(String message, {bool success = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: success ? Colors.green : Colors.red,
+      ),
+    );
+  }
+
+  Widget _buildCleanerSelectionCard() {
+    if (_isLoadingCleaners) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_availableCleaners.isEmpty) {
+      return Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            'No available cleaners for ${widget.serviceLabel}',
+            style: GoogleFonts.poppins(fontSize: 16),
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Select Cleaners (Max 2)',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            ..._availableCleaners.map((cleaner) => ListTile(
+              leading: CircleAvatar(
+                backgroundImage: NetworkImage(cleaner['photoUrl'] ?? ''),
+                radius: 20,
+              ),
+              title: Text(cleaner['name']),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Rating: ${cleaner['rating']?.toStringAsFixed(1) ?? 'N/A'}'),
+                  Text(
+                    'Status: ${cleaner['status']}',
+                    style: TextStyle(
+                      color: cleaner['status'] == 'available' 
+                          ? Colors.green 
+                          : Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+              trailing: Icon(
+                _selectedCleanerIds.contains(cleaner['id']) 
+                    ? Icons.check_circle 
+                    : Icons.radio_button_unchecked,
+                color: _selectedCleanerIds.contains(cleaner['id']) 
+                    ? Colors.green 
+                    : Colors.grey,
+              ),
+              onTap: () => _selectCleaner(cleaner['id']),
+            )),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +210,8 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
             _buildServiceDetailsCard(),
             const SizedBox(height: 20),
             _buildTotalCostCard(),
+            const SizedBox(height: 20),
+            _buildCleanerSelectionCard(),
             const SizedBox(height: 20),
             _buildFileUploadCard(),
             const SizedBox(height: 20),
@@ -277,6 +425,11 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
       return;
     }
 
+    if (_selectedCleanerIds.isEmpty) {
+      _showMessage('Please select at least one cleaner');
+      return;
+    }
+
     setState(() => _isSending = true);
 
     try {
@@ -320,7 +473,7 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
         firstName: firstName,
         address: _selectedAddress!,
         location: _selectedLocation!,
-        serviceLabel: widget.serviceLabel, // Added serviceLabel to email
+        serviceLabel: widget.serviceLabel,
       );
 
       await _saveBookingDetails(user.uid, firstName, user.email!);
@@ -351,7 +504,8 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
         'userId': userId,
         'firstName': firstName,
         'email': email,
-        'serviceLabel': widget.serviceLabel, // Now included
+        'serviceLabel': _standardizeString(widget.serviceLabel),
+        'displayServiceLabel': widget.serviceLabel,
         'selectedDate': widget.selectedDate.toIso8601String(),
         'selectedTime': widget.selectedTime?.format(context),
         'itemSize': widget.itemSize,
@@ -363,6 +517,8 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
         ),
         'status': 'pending',
         'timestamp': FieldValue.serverTimestamp(),
+        'assignedCleaners': _selectedCleanerIds,
+        'paymentProof': _fileName,
       };
 
       await _firestore.collection('bookings').add(bookingDetails);
@@ -377,15 +533,5 @@ class _PaymentUploadScreenState extends State<PaymentUploadScreen> {
     return fileName != null
         ? lookupMimeType(fileName) ?? 'application/octet-stream'
         : 'application/octet-stream';
-  }
-
-  void _showMessage(String message, {bool success = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: success ? Colors.green : Colors.red,
-      ),
-    );
   }
 }
