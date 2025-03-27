@@ -19,6 +19,46 @@ class WaterTankCleaningPage extends StatefulWidget {
 class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
   final TextEditingController _areaController = TextEditingController();
   final double pricePerSqm = 80.0; // ₱80 per sqm
+  double _totalCost = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _areaController.addListener(_updateTotalCost);
+  }
+
+  @override
+  void dispose() {
+    _areaController.removeListener(_updateTotalCost);
+    _areaController.dispose();
+    super.dispose();
+  }
+
+  void _updateTotalCost() {
+    setState(() {
+      double tankSize = double.tryParse(_areaController.text) ?? 0;
+      _totalCost = tankSize * pricePerSqm;
+    });
+  }
+
+  void _showLargeOrderDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Large service Notice'),
+        content: const Text(
+          'For service exceeding ₱10,000, please visit our shop for payment arrangements.',
+          style: TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Colors.purple)),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _bookService() {
     double tankSize = double.tryParse(_areaController.text) ?? 0;
@@ -33,7 +73,12 @@ class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
       return;
     }
 
-    // Parse date/time with fallbacks
+    // Check if total exceeds 10,000
+    if (_totalCost > 10000) {
+      _showLargeOrderDialog();
+      return;
+    }
+
     DateTime selectedDate;
     try {
       selectedDate = DateTime.parse(widget.selectedDate ?? DateTime.now().toString());
@@ -52,14 +97,11 @@ class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
       selectedTime = const TimeOfDay(hour: 12, minute: 0);
     }
 
-    // Calculate total cost
-    double totalCost = tankSize * pricePerSqm;
-
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PaymentUploadScreen(
-          totalCost: totalCost.toInt(),
+          totalCost: _totalCost.toInt(),
           selectedDate: selectedDate,
           selectedTime: selectedTime,
           itemSize: tankSize.round(),
@@ -71,6 +113,8 @@ class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
 
   @override
   Widget build(BuildContext context) {
+    final showWarning = _totalCost > 10000;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Water Tank Cleaning'),
@@ -148,40 +192,29 @@ class _WaterTankCleaningPageState extends State<WaterTankCleaningPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              if (widget.selectedDate != null || widget.selectedTime != null)
-                Card(
-                  elevation: 8,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        if (widget.selectedDate != null)
-                          Text(
-                            'Selected Date: ${widget.selectedDate}',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.purple[900],
-                            ),
-                          ),
-                        if (widget.selectedTime != null)
-                          Text(
-                            'Selected Time: ${widget.selectedTime}',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.purple[900],
-                            ),
-                          ),
-                      ],
+              const SizedBox(height: 10),
+              Column(
+                children: [
+                  Text(
+                    'Total Cost: ₱${_totalCost.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: showWarning ? Colors.red : Colors.white,
                     ),
                   ),
-                ),
-              const SizedBox(height: 30),
+                  if (showWarning)
+                    const Text(
+                      '(Visit shop for payment)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.red,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

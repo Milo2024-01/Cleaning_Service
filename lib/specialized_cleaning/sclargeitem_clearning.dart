@@ -17,10 +17,37 @@ class LargeItemCleaningPage extends StatefulWidget {
 }
 
 class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
-  static const double fixedPrice = 2000.0; // Fixed price for large item cleaning
+  static const double pricePerItem = 2000.0;
+  int itemCount = 1;
+
+  double get totalPrice => pricePerItem * itemCount;
+
+  void _showLargeOrderDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Large service Notice'),
+        content: const Text(
+          'For service exceeding ₱10,000, please visit our shop for payment arrangements.',
+          style: TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Colors.amber)),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _bookService() {
-    // Parse date/time with fallbacks
+    // Check if total exceeds 10,000
+    if (totalPrice > 10000) {
+      _showLargeOrderDialog();
+      return;
+    }
+
     DateTime selectedDate;
     try {
       selectedDate = DateTime.parse(widget.selectedDate ?? DateTime.now().toString());
@@ -43,10 +70,10 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
       context,
       MaterialPageRoute(
         builder: (context) => PaymentUploadScreen(
-          totalCost: fixedPrice.toInt(),
+          totalCost: totalPrice.toInt(),
           selectedDate: selectedDate,
           selectedTime: selectedTime,
-          itemSize: 1, // Since it's a fixed price service
+          itemSize: itemCount,
           serviceLabel: 'Large Item Cleaning',
         ),
       ),
@@ -55,6 +82,8 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
 
   @override
   Widget build(BuildContext context) {
+    final showWarning = totalPrice > 10000;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Large Item Cleaning'),
@@ -119,7 +148,7 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                   child: Column(
                     children: [
                       Text(
-                        'Fixed Price Service',
+                        'Price per Item',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -128,11 +157,64 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        '₱${fixedPrice.toStringAsFixed(2)} per item',
+                        '₱${pricePerItem.toStringAsFixed(2)} per item',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.remove, color: Colors.red[700]),
+                            onPressed: () {
+                              if (itemCount > 1) {
+                                setState(() {
+                                  itemCount--;
+                                });
+                              }
+                            },
+                          ),
+                          Text(
+                            '$itemCount',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.add, color: Colors.green[700]),
+                            onPressed: () {
+                              setState(() {
+                                itemCount++;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Column(
+                        children: [
+                          Text(
+                            'Total Cost: ₱${totalPrice.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: showWarning ? Colors.red : Colors.green[700],
+                            ),
+                          ),
+                          if (showWarning)
+                            const Text(
+                              '(Visit shop for payment)',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.red,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
@@ -153,7 +235,7 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                           Text(
                             'Selected Date: ${widget.selectedDate}',
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Colors.amber[900],
                             ),
@@ -162,7 +244,7 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                           Text(
                             'Selected Time: ${widget.selectedTime}',
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Colors.amber[900],
                             ),
@@ -171,7 +253,7 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                     ),
                   ),
                 ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -187,14 +269,6 @@ class _LargeItemCleaningPageState extends State<LargeItemCleaningPage> {
                     'Book Cleaning',
                     style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
-                ),
-              ),
-              const SizedBox(height: 40),
-              Center(
-                child: Icon(
-                  Icons.clean_hands,
-                  size: 100,
-                  color: Colors.amber[300],
                 ),
               ),
             ],

@@ -47,6 +47,25 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
     });
   }
 
+  void _showLargeOrderDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Large service Notice'),
+        content: const Text(
+          'For service exceeding ₱10,000, please visit our shop for payment arrangements.',
+          style: TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Colors.teal)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _navigateToPayment() {
     if (totalItems == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -55,6 +74,12 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      return;
+    }
+
+    // Check if total exceeds 10,000
+    if (totalCost > 10000) {
+      _showLargeOrderDialog();
       return;
     }
 
@@ -77,7 +102,6 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
       selectedTime = const TimeOfDay(hour: 12, minute: 0);
     }
 
-    // Direct navigation to payment
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -94,6 +118,8 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final showWarning = totalCost > 10000;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -197,14 +223,26 @@ class _CarDetailingScreenState extends State<CarDetailingScreen> {
                         }),
                       ),
                       const SizedBox(height: 20),
-                      Center(
-                        child: Text(
-                          'Total Cost: PHP ${totalCost.toStringAsFixed(2)}',
-                          style: const TextStyle(
+                      Column(
+                        children: [
+                          Text(
+                            'Total Cost: PHP ${totalCost.toStringAsFixed(2)}',
+                            style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              color: Colors.teal),
-                        ),
+                              color: showWarning ? Colors.red : Colors.teal,
+                            ),
+                          ),
+                          if (showWarning)
+                            const Text(
+                              '(Visit shop for payment)',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.red,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 30),
                       if (widget.selectedDate != null || widget.selectedTime != null)

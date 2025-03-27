@@ -28,49 +28,64 @@ class _GreaseTrapCleaningCalculatorState
     });
   }
 
- void _bookService() {
-  // Ensure selectedDate is not null and is in a valid format
-  DateTime selectedDate;
-  try {
-    selectedDate = widget.selectedDate != null
-        ? DateTime.parse(widget.selectedDate!)
-        : DateTime.now();
-  } catch (e) {
-    selectedDate = DateTime.now(); // Fallback to current date in case of error
-  }
-
-  // Ensure selectedTime is not null and is in a valid format
-  TimeOfDay selectedTime;
-  try {
-    if (widget.selectedTime != null) {
-      final timeParts = widget.selectedTime!.split(":");
-      selectedTime = TimeOfDay(
-        hour: int.parse(timeParts[0]),
-        minute: int.parse(timeParts[1]),
+  void _bookService() {
+    // Show alert if total cost exceeds 10,000
+    if (totalCost > 10000) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Large Order Notice'),
+          content: const Text(
+              'For service exceeding ₱10,000, please visit our shop for payment.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
-    } else {
-      selectedTime = const TimeOfDay(hour: 12, minute: 0); // Default to 12:00 PM
+      return; // Exit the function without proceeding
     }
-  } catch (e) {
-    selectedTime = const TimeOfDay(hour: 12, minute: 0); // Fallback in case of error
-  }
 
-  // Navigate to PaymentUploadScreen
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => PaymentUploadScreen(
-        totalCost: totalCost,
-        selectedDate: selectedDate,
-        selectedTime: selectedTime,
-        itemSize: numberOfTraps,
-        serviceLabel: 'Grease Trap Cleaning',
+    // Proceed with normal booking if under 10,000
+    DateTime selectedDate;
+    try {
+      selectedDate = widget.selectedDate != null
+          ? DateTime.parse(widget.selectedDate!)
+          : DateTime.now();
+    } catch (e) {
+      selectedDate = DateTime.now();
+    }
+
+    TimeOfDay selectedTime;
+    try {
+      if (widget.selectedTime != null) {
+        final timeParts = widget.selectedTime!.split(":");
+        selectedTime = TimeOfDay(
+          hour: int.parse(timeParts[0]),
+          minute: int.parse(timeParts[1]),
+        );
+      } else {
+        selectedTime = const TimeOfDay(hour: 12, minute: 0);
+      }
+    } catch (e) {
+      selectedTime = const TimeOfDay(hour: 12, minute: 0);
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentUploadScreen(
+          totalCost: totalCost,
+          selectedDate: selectedDate,
+          selectedTime: selectedTime,
+          itemSize: numberOfTraps,
+          serviceLabel: 'Grease Trap Cleaning',
+        ),
       ),
-    ),
-  );
-}
-
-
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +99,7 @@ class _GreaseTrapCleaningCalculatorState
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.red[800], // Dark red for contrast
+        backgroundColor: Colors.red[800],
         elevation: 5,
         centerTitle: true,
       ),
@@ -105,7 +120,7 @@ class _GreaseTrapCleaningCalculatorState
             // ignore: deprecated_member_use
             color: Colors.white.withOpacity(0.9),
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
                 color: Colors.black26,
                 blurRadius: 8,
@@ -228,7 +243,7 @@ class _GreaseTrapCleaningCalculatorState
               const SizedBox(height: 30),
               Center(
                 child: ElevatedButton(
-                  onPressed: _bookService, // Navigate to the booking screen
+                  onPressed: _bookService,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red[800],
                     padding: const EdgeInsets.symmetric(
@@ -248,34 +263,31 @@ class _GreaseTrapCleaningCalculatorState
                 ),
               ),
               const SizedBox(height: 30),
-
-              // Selected Date and Time Display
-             // Selected Date and Time Display (Centered)
-                  if (widget.selectedDate != null && widget.selectedTime != null)
-                    Center(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Selected Date: ${widget.selectedDate}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.amber[900],
-                            ),
-                          ),
-                          Text(
-                            'Selected Time: ${widget.selectedTime}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.amber[900],
-                            ),
-                          ),
-                          const SizedBox(height: 20), // Space between time and button
-                        ],
+              if (widget.selectedDate != null && widget.selectedTime != null)
+                Center(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Selected Date: ${widget.selectedDate}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[900],
+                        ),
                       ),
-                    ),
+                      Text(
+                        'Selected Time: ${widget.selectedTime}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[900],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),

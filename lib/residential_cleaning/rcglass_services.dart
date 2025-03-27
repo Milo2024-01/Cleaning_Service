@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-//import '../calendar_booking.dart'; // Import CalendarBookingScreen
-import '../payment_upload.dart'; // Import PaymentUploadScreen
+import '../payment_upload.dart';
 
 class GlassDetailingCalculator extends StatefulWidget {
   final String? selectedDate;
@@ -18,61 +17,85 @@ class GlassDetailingCalculator extends StatefulWidget {
 }
 
 class _GlassDetailingCalculatorState extends State<GlassDetailingCalculator> {
-  double panelCount = 1.0; // Default to 1 panel
-  double totalCost = 150.0; // Cost per panel (150 Pesos)
+  double panelCount = 1.0;
+  double totalCost = 150.0; // 150 Pesos per panel
 
   void calculateTotalCost() {
     setState(() {
-      totalCost = panelCount * 150; // 150 Pesos per panel
+      totalCost = panelCount * 150;
     });
   }
 
   void _bookService() {
-  // Ensure selectedDate is not null and is in a valid format
-  DateTime selectedDate;
-  try {
-    selectedDate = widget.selectedDate != null
-        ? DateTime.parse(widget.selectedDate!)
-        : DateTime.now();
-  } catch (e) {
-    selectedDate = DateTime.now(); // Fallback to current date in case of error
-  }
-
-  // Ensure selectedTime is not null and is in a valid format
-  TimeOfDay selectedTime;
-  try {
-    if (widget.selectedTime != null) {
-      final timeParts = widget.selectedTime!.split(":");
-      selectedTime = TimeOfDay(
-        hour: int.parse(timeParts[0]),
-        minute: int.parse(timeParts[1]),
-      );
-    } else {
-      selectedTime = const TimeOfDay(hour: 12, minute: 0); // Default to 12:00 PM
+    // Check if total exceeds 10,000
+    if (totalCost > 10000) {
+      _showLargeOrderDialog();
+      return;
     }
-  } catch (e) {
-    selectedTime = const TimeOfDay(hour: 12, minute: 0); // Fallback in case of error
+
+    // Ensure selectedDate is valid
+    DateTime selectedDate;
+    try {
+      selectedDate = widget.selectedDate != null
+          ? DateTime.parse(widget.selectedDate!)
+          : DateTime.now();
+    } catch (e) {
+      selectedDate = DateTime.now();
+    }
+
+    // Ensure selectedTime is valid
+    TimeOfDay selectedTime;
+    try {
+      if (widget.selectedTime != null) {
+        final timeParts = widget.selectedTime!.split(":");
+        selectedTime = TimeOfDay(
+          hour: int.parse(timeParts[0]),
+          minute: int.parse(timeParts[1]),
+        );
+      } else {
+        selectedTime = const TimeOfDay(hour: 12, minute: 0);
+      }
+    } catch (e) {
+      selectedTime = const TimeOfDay(hour: 12, minute: 0);
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentUploadScreen(
+          totalCost: totalCost.toInt(),
+          selectedDate: selectedDate,
+          selectedTime: selectedTime,
+          itemSize: 1,
+          serviceLabel: 'Glass Detailing',
+        ),
+      ),
+    );
   }
 
-  // Navigate to PaymentUploadScreen
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => PaymentUploadScreen(
-        totalCost: totalCost.toInt(),
-        selectedDate: selectedDate,
-        selectedTime: selectedTime,
-        itemSize: 1, // Adjust as needed
-        serviceLabel: 'Glass Detailing', // Pass the service label
+  void _showLargeOrderDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Large Order Notice'),
+        content: const Text(
+          'For service exceeding ₱10,000, please visit our shop for payment arrangements.',
+          style: TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Colors.teal)),
+          ),
+        ],
       ),
-    ),
-  );
-}
-
-
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final showWarning = totalCost > 10000;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -83,7 +106,7 @@ class _GlassDetailingCalculatorState extends State<GlassDetailingCalculator> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.teal[800], // Dark teal for contrast
+        backgroundColor: Colors.teal[800],
         elevation: 5,
         centerTitle: true,
       ),
@@ -104,7 +127,7 @@ class _GlassDetailingCalculatorState extends State<GlassDetailingCalculator> {
             // ignore: deprecated_member_use
             color: Colors.white.withOpacity(0.9),
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
                 color: Colors.black26,
                 blurRadius: 8,
@@ -136,7 +159,7 @@ class _GlassDetailingCalculatorState extends State<GlassDetailingCalculator> {
                       ),
                       const SizedBox(height: 10),
                       const Text(
-                        'We provide specialized cleaning for all types of glass surfaces, ensuring clarity and shine. We use professional-grade products to remove water marks and stains.',
+                        'We provide specialized cleaning for all types of glass surfaces, ensuring clarity and shine.',
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.black87,
@@ -167,23 +190,35 @@ class _GlassDetailingCalculatorState extends State<GlassDetailingCalculator> {
                 onChanged: (double value) {
                   setState(() {
                     panelCount = value;
-                    calculateTotalCost(); // Recalculate the cost when the slider changes
+                    calculateTotalCost();
                   });
                 },
               ),
               const SizedBox(height: 20),
               Center(
-                child: Text(
-                  'Total Cost: ₱${totalCost.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Total Cost: ₱${totalCost.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: showWarning ? Colors.red : Colors.black87,
+                      ),
+                    ),
+                    if (showWarning)
+                      const Text(
+                        '(Visit shop for payment)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.red,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 30),
-              // Add a note about cost per panel
+              const SizedBox(height: 20),
               Center(
                 child: Text(
                   'Cost per panel: ₱150',
@@ -196,7 +231,7 @@ class _GlassDetailingCalculatorState extends State<GlassDetailingCalculator> {
               const SizedBox(height: 30),
               Center(
                 child: ElevatedButton(
-                  onPressed: _bookService, // Navigate to the booking screen
+                  onPressed: _bookService,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.teal[800],
                     padding: const EdgeInsets.symmetric(
@@ -205,7 +240,6 @@ class _GlassDetailingCalculatorState extends State<GlassDetailingCalculator> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  
                   child: const Text(
                     'Book Service',
                     style: TextStyle(
@@ -217,34 +251,30 @@ class _GlassDetailingCalculatorState extends State<GlassDetailingCalculator> {
                 ),
               ),
               const SizedBox(height: 30),
-
-              // Selected Date and Time Display
-             // Selected Date and Time Display (Centered)
-                  if (widget.selectedDate != null && widget.selectedTime != null)
-                    Center(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Selected Date: ${widget.selectedDate}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.amber[900],
-                            ),
-                          ),
-                          Text(
-                            'Selected Time: ${widget.selectedTime}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.amber[900],
-                            ),
-                          ),
-                          const SizedBox(height: 20), // Space between time and button
-                        ],
+              if (widget.selectedDate != null && widget.selectedTime != null)
+                Center(
+                  child: Column(
+                    children: [
+                      Text(
+                        'Selected Date: ${widget.selectedDate}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[900],
+                        ),
                       ),
-                    ),
+                      Text(
+                        'Selected Time: ${widget.selectedTime}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[900],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),

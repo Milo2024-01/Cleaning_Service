@@ -32,7 +32,34 @@ class _CarpetCleaningScreenState extends State<CarpetCleaningScreen> {
     super.dispose();
   }
 
+  void _showLargeOrderDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Large service Notice'),
+        content: const Text(
+          'For service exceeding ₱10,000, please visit our shop for payment arrangements.',
+          style: TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Colors.deepPurple)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _bookNow() {
+    final totalCost = areaSize * ratePerSqm;
+    
+    // Check if total exceeds 10,000
+    if (totalCost > 10000) {
+      _showLargeOrderDialog();
+      return;
+    }
+
     if (areaSize < 1) {
       _showSnackbar('Please select an area size of at least 1 sqm.');
       return;
@@ -61,7 +88,7 @@ class _CarpetCleaningScreenState extends State<CarpetCleaningScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => PaymentUploadScreen(
-          totalCost: (areaSize * ratePerSqm).toInt(),
+          totalCost: totalCost.toInt(),
           selectedDate: selectedDate,
           selectedTime: selectedTime,
           itemSize: areaSize.round(),
@@ -85,6 +112,9 @@ class _CarpetCleaningScreenState extends State<CarpetCleaningScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final totalCost = areaSize * ratePerSqm;
+    final showWarning = totalCost > 10000;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Carpet Cleaning'),
@@ -137,15 +167,26 @@ class _CarpetCleaningScreenState extends State<CarpetCleaningScreen> {
             const SizedBox(height: 20),
 
             // Total Cost Display
-            Center(
-              child: Text(
-                'Total Cost: ₱${(areaSize * ratePerSqm).toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+            Column(
+              children: [
+                Text(
+                  'Total Cost: ₱${totalCost.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: showWarning ? Colors.red : Colors.black87,
+                  ),
                 ),
-              ),
+                if (showWarning)
+                  const Text(
+                    '(Visit shop for payment)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.red,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 30),
 

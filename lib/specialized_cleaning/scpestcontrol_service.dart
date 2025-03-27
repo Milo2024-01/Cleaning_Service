@@ -19,6 +19,46 @@ class PestControlPage extends StatefulWidget {
 class _PestControlPageState extends State<PestControlPage> {
   final TextEditingController _areaController = TextEditingController();
   final int pricePerSqm = 65; // ₱65 per sqm
+  double _totalCost = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _areaController.addListener(_updateTotalCost);
+  }
+
+  @override
+  void dispose() {
+    _areaController.removeListener(_updateTotalCost);
+    _areaController.dispose();
+    super.dispose();
+  }
+
+  void _updateTotalCost() {
+    setState(() {
+      double areaSize = double.tryParse(_areaController.text) ?? 0;
+      _totalCost = areaSize * pricePerSqm;
+    });
+  }
+
+  void _showLargeOrderDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Large service Notice'),
+        content: const Text(
+          'For service exceeding ₱10,000, please visit our shop for payment arrangements.',
+          style: TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _bookService() {
     double areaSize = double.tryParse(_areaController.text) ?? 0;
@@ -30,6 +70,12 @@ class _PestControlPageState extends State<PestControlPage> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      return;
+    }
+
+    // Check if total exceeds 10,000
+    if (_totalCost > 10000) {
+      _showLargeOrderDialog();
       return;
     }
 
@@ -52,14 +98,11 @@ class _PestControlPageState extends State<PestControlPage> {
       selectedTime = const TimeOfDay(hour: 12, minute: 0);
     }
 
-    // Calculate total cost
-    double totalCost = areaSize * pricePerSqm;
-
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PaymentUploadScreen(
-          totalCost: totalCost.toInt(),
+          totalCost: _totalCost.toInt(),
           selectedDate: selectedDate,
           selectedTime: selectedTime,
           itemSize: areaSize.round(),
@@ -71,6 +114,8 @@ class _PestControlPageState extends State<PestControlPage> {
 
   @override
   Widget build(BuildContext context) {
+    final showWarning = _totalCost > 10000;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('General Pest Control'),
@@ -138,11 +183,33 @@ class _PestControlPageState extends State<PestControlPage> {
                 controller: _areaController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: "Area Size (sqm)",
+                  labelText: "Enter Area Size (sqm)",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
+              ),
+              const SizedBox(height: 20),
+              Column(
+                children: [
+                  Text(
+                    'Total Cost: ₱${_totalCost.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: showWarning ? Colors.red : Colors.white,
+                    ),
+                  ),
+                  if (showWarning)
+                    const Text(
+                      '(Visit shop for payment)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.red,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 20),
               if (widget.selectedDate != null || widget.selectedTime != null)

@@ -22,6 +22,14 @@ class _RCCDeclutteringServicePageState
   final double ratePerHour = 550.0;
 
   void _bookNow() {
+    final totalCost = ratePerHour * hours;
+    
+    // Check if total exceeds 10,000
+    if (totalCost > 10000) {
+      _showLargeOrderDialog();
+      return;
+    }
+
     if (hours < 1) {
       _showSnackbar('Please select at least 1 hour.');
       return;
@@ -49,12 +57,31 @@ class _RCCDeclutteringServicePageState
       context,
       MaterialPageRoute(
         builder: (context) => PaymentUploadScreen(
-          totalCost: (ratePerHour * hours).toInt(),
+          totalCost: totalCost.toInt(),
           selectedDate: selectedDate,
           selectedTime: selectedTime,
           itemSize: 1,
           serviceLabel: 'Decluttering Services',
         ),
+      ),
+    );
+  }
+
+  void _showLargeOrderDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Large Order Notice'),
+        content: const Text(
+          'For service exceeding ₱10,000, please visit our shop for payment arrangements.',
+          style: TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Colors.deepPurple)),
+          ),
+        ],
       ),
     );
   }
@@ -73,6 +100,9 @@ class _RCCDeclutteringServicePageState
 
   @override
   Widget build(BuildContext context) {
+    final totalCost = ratePerHour * hours;
+    final showWarning = totalCost > 10000;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Decluttering Services'),
@@ -93,8 +123,10 @@ class _RCCDeclutteringServicePageState
               style: TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 20),
-            Text('Rate: ₱$ratePerHour per hour',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              'Rate: ₱$ratePerHour per hour',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -110,10 +142,27 @@ class _RCCDeclutteringServicePageState
                 ),
                 Column(
                   children: [
-                    Text('$hours hrs',
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                    Text('Total: ₱${(hours * ratePerHour).toInt()}',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      '$hours hrs',
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'Total: ₱${totalCost.toInt()}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: showWarning ? Colors.red : Colors.black,
+                      ),
+                    ),
+                    if (showWarning)
+                      const Text(
+                        '(Visit shop for payment)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.red,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
                   ],
                 ),
                 IconButton(
@@ -129,18 +178,20 @@ class _RCCDeclutteringServicePageState
             ),
             const SizedBox(height: 30),
             if (widget.selectedDate != null || widget.selectedTime != null)
-              Center(
-                child: Column(
-                  children: [
-                    if (widget.selectedDate != null)
-                      Text('Selected Date: ${widget.selectedDate}',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    if (widget.selectedTime != null)
-                      Text('Selected Time: ${widget.selectedTime}',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 20),
-                  ],
-                ),
+              Column(
+                children: [
+                  if (widget.selectedDate != null)
+                    Text(
+                      'Selected Date: ${widget.selectedDate}',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  if (widget.selectedTime != null)
+                    Text(
+                      'Selected Time: ${widget.selectedTime}',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  const SizedBox(height: 20),
+                ],
               ),
             Center(
               child: ElevatedButton(
@@ -148,9 +199,14 @@ class _RCCDeclutteringServicePageState
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
                   padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 40),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
                 ),
-                child: const Text('Book Service', style: TextStyle(fontSize: 18, color: Colors.white)),
+                child: const Text(
+                  'Book Service',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
               ),
             ),
           ],

@@ -51,7 +51,29 @@ class _FurnitureCleaningScreenState extends State<FurnitureCleaningScreen> {
     return quantities.values.fold(0, (sum, quantity) => sum + quantity);
   }
 
+  void _showLargeOrderDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Large Order Notice'),
+        content: const Text(
+          'For service exceeding ₱10,000, please visit our shop for payment arrangements.',
+          style: TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Colors.blueAccent)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _navigateToPayment() {
+    final totalPrice = getTotalPrice();
+    
+    // Check if no items selected
     if (getTotalItems() == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -59,6 +81,12 @@ class _FurnitureCleaningScreenState extends State<FurnitureCleaningScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      return;
+    }
+
+    // Check if total exceeds 10,000
+    if (totalPrice > 10000) {
+      _showLargeOrderDialog();
       return;
     }
 
@@ -85,7 +113,7 @@ class _FurnitureCleaningScreenState extends State<FurnitureCleaningScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => PaymentUploadScreen(
-          totalCost: getTotalPrice(),
+          totalCost: totalPrice,
           selectedDate: selectedDate,
           selectedTime: selectedTime,
           itemSize: getTotalItems(),
@@ -97,6 +125,9 @@ class _FurnitureCleaningScreenState extends State<FurnitureCleaningScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final totalPrice = getTotalPrice();
+    final showWarning = totalPrice > 10000;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -238,13 +269,25 @@ class _FurnitureCleaningScreenState extends State<FurnitureCleaningScreen> {
                           const Text("Total Price:",
                               style: TextStyle(
                                   fontSize: 20, fontWeight: FontWeight.bold)),
-                          Text("₱${getTotalPrice()}",
-                              style: const TextStyle(
+                          Text("₱$totalPrice",
+                              style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blueAccent)),
+                                  color: showWarning ? Colors.red : Colors.blueAccent)),
                         ],
                       ),
+                      if (showWarning)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Text(
+                            "For service over ₱10,000, please visit our shop",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.red,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
