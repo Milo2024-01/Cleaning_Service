@@ -141,92 +141,148 @@ class _BookingCalendarState extends State<BookingCalendar> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Color.fromRGBO(0, 0, 0, 26), // Equivalent to black.withOpacity(0.1)
+                color: Color.fromRGBO(0, 0, 0, 26),
                 blurRadius: 20,
                 spreadRadius: 5,
               ),
             ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Booking Details',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple,
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildModernDetailRow(Icons.cleaning_services, booking['serviceLabel']),
-              _buildModernDetailRow(Icons.calendar_today, DateFormat('MMMM d, yyyy').format(bookingDate)),
-              _buildModernDetailRow(Icons.access_time, booking['selectedTime']),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(status).withAlpha(26), // ~10% opacity
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _getStatusColor(status).withAlpha(77), // ~30% opacity
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  status.toString().toUpperCase(),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Booking Details',
                   style: TextStyle(
-                    color: _getStatusColor(status),
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
+                    color: Colors.deepPurple,
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              if (canCancel)
-                Text(
-                  '⚠️ Cancellation possible until ${DateFormat('MMM d, h:mm a').format(bookingDate.subtract(const Duration(hours: 48)))}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.orange,
-                  ),
-                ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.grey,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                const SizedBox(height: 20),
+                _buildModernDetailRow(Icons.cleaning_services, booking['serviceLabel']),
+                _buildModernDetailRow(Icons.calendar_today, DateFormat('MMMM d, yyyy').format(bookingDate)),
+                _buildModernDetailRow(Icons.access_time, booking['selectedTime']),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(status).withAlpha(26),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: _getStatusColor(status).withAlpha(77),
+                      width: 1,
                     ),
-                    child: const Text('Close'),
                   ),
-                  if (canCancel) ...[
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _cancelBooking(booking['docId']);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade50,
-                        foregroundColor: Colors.red,
+                  child: Text(
+                    status.toString().toUpperCase(),
+                    style: TextStyle(
+                      color: _getStatusColor(status),
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Cancellation Policy Section
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.grey.shade300,
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Cancellation Policy:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepPurple,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      RichText(
+                        text: const TextSpan(
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: '• ',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextSpan(
+                              text: 'Cancellations made at least 2 days before the scheduled service are eligible for a full refund.\n\n'),
+                            TextSpan(
+                              text: '• ',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextSpan(
+                              text: 'Cancellations made less than 48 hours before the appointment may be subject to a cancellation fee.\n\n'),
+                            TextSpan(
+                              text: '• ',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextSpan(
+                              text: 'To cancel or reschedule, please contact our support team immediately.'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                if (canCancel)
+                  Text(
+                    '⚠️ Cancellation possible until ${DateFormat('MMM d, h:mm a').format(bookingDate.subtract(const Duration(hours: 48)))}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.orange,
+                    ),
+                  ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        elevation: 0,
                       ),
-                      child: const Text('Cancel Booking'),
+                      child: const Text('Close'),
                     ),
+                    if (canCancel) ...[
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _cancelBooking(booking['docId']);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade50,
+                          foregroundColor: Colors.red,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text('Cancel Booking'),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -280,7 +336,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
 
     switch (booking['status']) {
       case 'completed':
-        return completedColor.withAlpha(51); // ~20% opacity
+        return completedColor.withAlpha(51);
       case 'confirmed':
         return confirmedColor.withAlpha(51);
       case 'pending':
@@ -346,7 +402,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
           if (isBooked)
             BoxShadow(
               color: Color.alphaBlend(
-                _getTextColor(date).withAlpha(51), // ~20% opacity
+                _getTextColor(date).withAlpha(51),
                 Colors.white,
               ),
               blurRadius: 6,
@@ -438,7 +494,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
         centerTitle: true,
         backgroundColor: Colors.deepPurple,
         elevation: 4,
-        shadowColor: Color.fromRGBO(103, 58, 183, 77), // deepPurple.withOpacity(0.3)
+        shadowColor: Color.fromRGBO(103, 58, 183, 77),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             bottom: Radius.circular(16),
@@ -458,7 +514,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color.fromRGBO(237, 231, 246, 1), // deepPurple.shade50
+                    Color.fromRGBO(237, 231, 246, 1),
                     Colors.white,
                   ],
                 ),
@@ -472,7 +528,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Color.fromRGBO(0, 0, 0, 13), // black.withOpacity(0.05)
+                          color: Color.fromRGBO(0, 0, 0, 13),
                           blurRadius: 10,
                           spreadRadius: 2,
                         ),
@@ -485,7 +541,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                           icon: const Icon(Icons.chevron_left),
                           onPressed: () => _changeMonth(-1),
                           style: IconButton.styleFrom(
-                            backgroundColor: Color.fromRGBO(103, 58, 183, 26), // deepPurple.withOpacity(0.1)
+                            backgroundColor: Color.fromRGBO(103, 58, 183, 26),
                           ),
                         ),
                         Text(
@@ -499,7 +555,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                           icon: const Icon(Icons.chevron_right),
                           onPressed: () => _changeMonth(1),
                           style: IconButton.styleFrom(
-                            backgroundColor: Color.fromRGBO(103, 58, 183, 26), // deepPurple.withOpacity(0.1)
+                            backgroundColor: Color.fromRGBO(103, 58, 183, 26),
                           ),
                         ),
                       ],
@@ -513,7 +569,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Color.fromRGBO(0, 0, 0, 13), // black.withOpacity(0.05)
+                          color: Color.fromRGBO(0, 0, 0, 13),
                           blurRadius: 6,
                           spreadRadius: 1,
                         ),
@@ -541,7 +597,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Color.fromRGBO(0, 0, 0, 13), // black.withOpacity(0.05)
+                            color: Color.fromRGBO(0, 0, 0, 13),
                             blurRadius: 10,
                             spreadRadius: 2,
                           ),
@@ -558,7 +614,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Color.fromRGBO(0, 0, 0, 13), // black.withOpacity(0.05)
+                          color: Color.fromRGBO(0, 0, 0, 13),
                           blurRadius: 10,
                           spreadRadius: 2,
                         ),
@@ -590,7 +646,7 @@ class _BookingCalendarState extends State<BookingCalendar> {
         color: bgColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: iconColor.withAlpha(77), // ~30% opacity
+          color: iconColor.withAlpha(77),
           width: 1,
         ),
       ),

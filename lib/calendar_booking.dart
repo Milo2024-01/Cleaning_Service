@@ -17,15 +17,24 @@ import 'specialized_cleaning/scwatertank_cleaning.dart';
 class CalendarBookingScreen extends StatefulWidget {
   final String serviceLabel;
 
-  const CalendarBookingScreen({super.key, required this.serviceLabel, String? initialDate, String? initialTime});
+  const CalendarBookingScreen({super.key, required this.serviceLabel});
 
   @override
   _CalendarBookingScreenState createState() => _CalendarBookingScreenState();
 }
 
 class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
-  DateTime _selectedDate = DateTime.now();
+  late DateTime _selectedDate;
   TimeOfDay? _selectedTime;
+  final DateTime _today = DateTime.now();
+  final int _disabledDaysCount = 3; // Today + next 2 days (3 days total)
+
+  @override
+  void initState() {
+    super.initState();
+    // Set initial selected date to first available date after disabled period
+    _selectedDate = _today.add(Duration(days: _disabledDaysCount));
+  }
 
   Future<void> _pickTime() async {
     final TimeOfDay? pickedTime = await showTimePicker(
@@ -46,6 +55,12 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
         _selectedTime = pickedTime;
       });
     }
+  }
+
+  bool _isDateDisabled(DateTime day) {
+    // Disable today and the next (_disabledDaysCount - 1) days
+    return day.isBefore(_today.add(Duration(days: _disabledDaysCount))) && 
+           !isSameDay(day, _today.add(Duration(days: _disabledDaysCount)));
   }
 
   void _confirmBooking() {
@@ -105,8 +120,7 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
       'Water Tank Cleaning': (context) => WaterTankCleaningPage(
             selectedDate: formattedDate,
             selectedTime: formattedTime,
-          ),           
-
+          ),
     };
 
     final screenBuilder = serviceScreens[widget.serviceLabel];
@@ -146,7 +160,9 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
             children: [
               Card(
                 elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: TableCalendar(
@@ -155,14 +171,30 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
                     focusedDay: _selectedDate,
                     selectedDayPredicate: (day) => isSameDay(_selectedDate, day),
                     onDaySelected: (selectedDay, focusedDay) {
-                      setState(() {
-                        _selectedDate = selectedDay;
-                      });
+                      if (!_isDateDisabled(selectedDay)) {
+                        setState(() {
+                          _selectedDate = selectedDay;
+                        });
+                      }
                     },
+                    enabledDayPredicate: (day) => !_isDateDisabled(day),
                     calendarStyle: CalendarStyle(
-                      selectedDecoration: BoxDecoration(color: Colors.blueAccent, shape: BoxShape.circle),
-                      // ignore: deprecated_member_use
-                      todayDecoration: BoxDecoration(color: Colors.blueAccent.withOpacity(0.3), shape: BoxShape.circle),
+                      selectedDecoration: BoxDecoration(
+                        color: Colors.blueAccent, 
+                        shape: BoxShape.circle,
+                      ),
+                      todayDecoration: BoxDecoration(
+                        // ignore: deprecated_member_use
+                        color: Colors.blueAccent.withOpacity(0.3), 
+                        shape: BoxShape.circle,
+                      ),
+                      disabledDecoration: BoxDecoration(
+                        // ignore: deprecated_member_use
+                        color: Colors.grey.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      disabledTextStyle: TextStyle(color: Colors.grey[400]),
+                      outsideDaysVisible: false,
                     ),
                     headerStyle: HeaderStyle(
                       formatButtonVisible: false,
@@ -176,7 +208,9 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
               const SizedBox(height: 20),
               Card(
                 elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: ListTile(
                   onTap: _pickTime,
                   leading: const Icon(Icons.access_time, color: Colors.blueAccent),
@@ -195,9 +229,27 @@ class _CalendarBookingScreenState extends State<CalendarBookingScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueAccent,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
-                  child: const Text('Confirm Booking', style: TextStyle(fontSize: 18, color: Colors.white)),
+                  child: const Text(
+                    'Confirm Booking', 
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  'Note: Bookings are available starting from ${DateFormat('MMMM d').format(_today.add(Duration(days: _disabledDaysCount)))}',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontStyle: FontStyle.italic,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ],
