@@ -18,11 +18,10 @@ class GeneralCleaningCalculator extends StatefulWidget {
 
 class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
   int hours = 1;
-  int cleaners = 1;
   final double ratePerHour = 350.0;
   final Logger _logger = Logger();
 
-  double get totalCost => ratePerHour * hours * cleaners;
+  double get totalCost => ratePerHour * hours;
 
   void _bookService() async {
     _logger.d('Booking initiated');
@@ -203,7 +202,7 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          '💰 Rate: ₱350 per hour, per cleaner',
+                          '💰 Rate: ₱350 per hour',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -240,15 +239,6 @@ class _GeneralCleaningCalculatorState extends State<GeneralCleaningCalculator> {
                           min: 1,
                           max: 10,
                           onChanged: (value) => setState(() => hours = value.toInt()),
-                        ),
-                        const SizedBox(height: 10),
-                        _buildSlider(
-                          icon: Icons.people,
-                          label: 'Cleaners',
-                          value: cleaners.toDouble(),
-                          min: 1,
-                          max: 10,
-                          onChanged: (value) => setState(() => cleaners = value.toInt()),
                         ),
                         const SizedBox(height: 15),
                         Text(
